@@ -25,7 +25,7 @@ while (my $line = <IN>)  {
 		print OUTp2 $line;
 		$count = 0;		
 	}	
-
+}
 close IN;
 close OUTp1;
 close OUTp2;
