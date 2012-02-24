@@ -21,7 +21,7 @@ while (my $line = <IN>)  {
 	if ($count == 3){	
 		print OUTp2 $line;
 	}	
-	if ($count $== 4){	
+	if ($count == 4){	
 		print OUTp2 $line;
 		$count = 0;		
 	}	
