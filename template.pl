@@ -41,8 +41,10 @@ BEGIN {
 my $global_options = checkParams();
 
 my $inputfile;
+my $outputfile;
 
 $inputfile = &overrideDefault("inputfile.txt",'inputfile');
+$outputfile = &overrideDefault("outputfile.txt",'outputfile');
  
 my $line;
 
@@ -52,7 +54,8 @@ my $line;
 ######################################################################
 
 
-open(IN, $inputfile) or die("Cannot probelist file: $inputfile\n");
+open(IN, $inputfile) or die("Cannot read file: $inputfile\n");
+open(OUT, ">$outputfile") or die("Cannot create file: $outputfile\n");
 
 while ( $line = <IN> ) {
 	chomp $line;   	
@@ -60,6 +63,7 @@ while ( $line = <IN> ) {
 }
 
 close IN;
+close OUT;
 
 ######################################################################
 # TEMPLATE SUBS
@@ -68,7 +72,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inputfile|i:s");
+    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -134,6 +138,7 @@ __DATA__
 script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
- [-infile -i]         Input file. 
+ [-inputfile -i]      Inputfile. 
+ [-outputfile -o]      Outputfile. 
  
 =cut

@@ -1,36 +1,78 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
+###############################################################################
+#
+#    calc.kmerfreq.pl
+#
+#	 Calculates kmer frequency in fasta files. 
+#    Length restriction, variable kmer, and rc kmer to remove strand bias.
+#    
+#    Copyright (C) 2012 Mads Albertsen
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+###############################################################################
 
-use warnings;
+#pragmas
 use strict;
-use diagnostics;
+use warnings;
 
+#core Perl modules
+use Getopt::Long;
 
-unless (@ARGV == 4) {die "Usage:perl scriptname fastafile outfile minsequencelength kmerlength\n";}
+#locally-written modules
+BEGIN {
+    select(STDERR);
+    $| = 1;
+    select(STDOUT);
+    $| = 1;
+}
 
-my $inputfile1 = shift;
-my $outfile = shift;
-my $minlength = shift;
-my $kmerlength = shift;
+# get input params
+my $global_options = checkParams();
+
+my $fastafile;;
+my $outfile;
+my $minlength;
+my $kmerlength;
+
+$fastafile = &overrideDefault("inputfile.fasta",'fastafile');
+$outfile = &overrideDefault("outfile.tab",'outfile');
+$minlength = &overrideDefault("10000",'minlength');
+$kmerlength = &overrideDefault("4",'kmer');
+
 my $line;
-my @probes;
-my @kmerheader;
-my %kmer;
+my $kmerlengthprobe;
+my $header;
+my $sequence;
 my $count = -1;
 my $printreadcount = 0;
 my $seqcount = 0;
 my $seqcountgood = 0;
-my $kmerlengthprobe;
-my $header;
-my $sequence;
 my $totalkmers = 0;
 my $output = "Contig";
+my @probes;
+my @kmerheader;
+my %kmer;
 
-####################Read files#########################
-open(IN, $inputfile1) or die("Cannot open file\n");
-open(OUT, ">$outfile") or die("Cannot create file\n");
+######################################################################
+# CODE HERE
+######################################################################
 
+open(IN, $fastafile) or die("Cannot open $fastafile\n");
+open(OUT, ">$outfile") or die("Cannot create $outfile\n");
 
-#Create all possible tetramers
+#Create all possible kmers
 
 for (my $count2 = 0; $count2 < $kmerlength; $count2++)  {
 	$kmerlengthprobe = $kmerlengthprobe."N";
@@ -138,3 +180,84 @@ close IN;
 close OUT;
 
 exit;
+
+######################################################################
+# TEMPLATE SUBS
+######################################################################
+sub checkParams {
+    #-----
+    # Do any and all options checking here...
+    #
+    my @standard_options = ( "help|h+", "fastafile|i:s", "outfile|i:s", "minlength|m:s", "kmer|k:s");
+    my %options;
+
+    # Add any other command line options, and the code to handle them
+    # 
+    GetOptions( \%options, @standard_options );
+    
+	#if no arguments supplied print the usage and exit
+    #
+    exec("pod2usage $0") if (0 == (keys (%options) ));
+
+    # If the -help option is set, print the usage and exit
+    #
+    exec("pod2usage $0") if $options{'help'};
+
+    # Compulsosy items
+    #if(!exists $options{'infile'} ) { print "**ERROR: $0 : \n"; exec("pod2usage $0"); }
+
+    return \%options;
+}
+
+sub overrideDefault
+{
+    #-----
+    # Set and override default values for parameters
+    #
+    my ($default_value, $option_name) = @_;
+    if(exists $global_options->{$option_name}) 
+    {
+        return $global_options->{$option_name};
+    }
+    return $default_value;
+}
+
+__DATA__
+
+=head1 NAME
+
+    calc.kmer.freq.pl
+
+=head1 COPYRIGHT
+
+   copyright (C) 2012 Mads Albertsen
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=head1 DESCRIPTION
+
+	Calculates kmer frequency in fasta files. 
+	Length restriction, variable kmer, and rc kmer to remove strand bias.
+
+=head1 SYNOPSIS
+
+script.pl  -i [-h]
+
+ [-help -h]           Displays this basic usage information
+ [-fastafile -i]      Input fastafile file. 
+ [-outputfile -o]     Outputfile.
+ [-minlength -m]      Minimum contig length (default: 10.000)
+ [-kmer -k]           kmer (default: 4)
+ 
+=cut
