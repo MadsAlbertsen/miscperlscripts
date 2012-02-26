@@ -188,7 +188,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "fastafile|i:s", "outfile|i:s", "minlength|m:s", "kmer|k:s");
+    my @standard_options = ( "help|h+", "fastafile|i:s", "outfile|o:s", "minlength|m:s", "kmer|k:s");
     my %options;
 
     # Add any other command line options, and the code to handle them

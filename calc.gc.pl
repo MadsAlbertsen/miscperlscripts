@@ -41,7 +41,7 @@ BEGIN {
 my $global_options = checkParams();
 
 my $inputfile;
-my $output;
+my $outputfile;
 
 $inputfile = &overrideDefault("inputfile.fasta",'inputfile');
 $outputfile = &overrideDefault("outputfile.txt",'outputfile');
@@ -58,7 +58,7 @@ my %counts;
 
 	
 open(IN, $inputfile) or die;
-open(IN, ">$outfile") or die;
+open(OUT, ">$outputfile") or die;
 
 
 while (my $line = <IN>)  {
@@ -92,6 +92,7 @@ foreach my $sequence (@array){
 }
 
 close IN;
+close OUT;
 exit;
 
 ######################################################################
