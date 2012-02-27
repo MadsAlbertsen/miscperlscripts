@@ -53,9 +53,9 @@ my $linenr = 0;
 # CODE HERE
 ######################################################################
 
-open(IN, $inputfile1) or die("Cannot open $inputfile\n");
-open(OUT, ">$p1.fastq") or die("Cannot create p1.fastq\n");
-open(OUT2, ">$p2.fastq") or die("Cannot create p2.fastq\n");
+open(IN, $inputfile) or die("Cannot open $inputfile\n");
+open(OUT, ">p1.fastq") or die("Cannot create p1.fastq\n");
+open(OUT2, ">p2.fastq") or die("Cannot create p2.fastq\n");
 
 print "Splitting reads into 2 files..\n";
 while ( $line = <IN> ) {
