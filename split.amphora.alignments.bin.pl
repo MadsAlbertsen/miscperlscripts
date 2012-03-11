@@ -126,7 +126,9 @@ while ( $filename = readdir(DIR)){
 		#Write the outputfiles one by one
 		foreach my $bin (sort keys %bins) {
 			my $outputfile = "bin.".$bin.".fasta";
+			my $outputfile2 = "bin.".$bin.".seqs.faa";
 			open(OUT, ">>$outputfile") or die("Cannot create file: $outputfile\n");				   #>> = append to file or create it
+			open(OUTfasta, ">>$outputfile2") or die("Cannot create file: $outputfile2\n");				   #>> = append to file or create it
 			my $count1 = 0;
 			my $count2 = 0;
 			my $length = 0;
@@ -141,17 +143,18 @@ while ( $filename = readdir(DIR)){
 				if (exists($contigs{$splitline[0]})){
 					if ($bin eq $contigs{$splitline[0]}){
 						$filename =~ s/.aln//g;
-						print OUT "$filename\t$sequences{$sequence}\t $sequence\n";					
-						$count1++;
-						$sequences{$sequence} =~ s/-//g;					 	 				   #To get the real length without gaps
+						print OUT "$filename\t$sequences{$sequence}\t $sequence\n";		           #Print the alignment in readable format
+						print OUTfasta "$sequence",'_',"$filename\n";	
+						$sequences{$sequence} =~ s/-//g;                                           #To get the real length without gaps and print the pure fasta file
+						$sequences{$sequence} = uc($sequences{$sequence});
+						print OUTfasta "$sequences{$sequence}\n";
+						$count1++;					 	 				   
 						$length = $length + length($sequences{$sequence});
 						$catlength = $catlength.length($sequences{$sequence}).";";
 						$catorfid= $catorfid.$sequence.";";
 					}		
 				}
 				else{
-					#print "@splitline[0]\n";
-					#print "@splitline[0]\t$contigs{$splitline[0]}\n";
 					$sequences{$sequence} =~ s/-//g;
 					$notlength = $notlength + length($sequences{$sequence});
 					$notcatlength = $notcatlength.length($sequences{$sequence}).";";						
@@ -172,6 +175,7 @@ while ( $filename = readdir(DIR)){
 				print STATS "$filename\tnot.in.bin\t$count2\t",sprintf("%.1f",$avglength),"\t$notcatlength\t$notorfid\n";
 			}			
 			close OUT;
+			close OUTfasta;
 		}
 	close INaln;
 	}
