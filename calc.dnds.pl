@@ -165,6 +165,6 @@ __DATA__
 script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
- [-inputfile -i]      Aligned in frame fasta file.  
+ [-inputfile -i]      Aligned 'in frame' fasta file.  
  
 =cut

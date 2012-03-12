@@ -3,7 +3,7 @@
 #
 #    calc.gc.pl
 #
-#	 Calculates gc content in fasta files
+#	 Calculates gc content in fasta files.
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -165,7 +165,7 @@ __DATA__
 
 =head1 SYNOPSIS
 
-script.pl  -i [-h]
+script.pl  -i -o [-h]
 
  [-help -h]           Displays this basic usage information
  [-inputfile -i]      Input fasta file. 

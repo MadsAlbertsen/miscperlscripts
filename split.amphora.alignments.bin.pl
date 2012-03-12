@@ -3,10 +3,16 @@
 #
 #    split.amphora.alignments.bins.pl
 #
-#	 Splits amphora protein alignments into different bins and makes easy
-#    readable stats and overview files.
+#	 Processes the .aln files output by Amphora2. Creates stats on the number 
+#    of genes and creates combined aligned files that can quickly be scanned through.
+#    In addition the program can split the results into different files based 
+#    on an input bin file. The bin file needs to be in the format 
+#    contigname "tab" bin. e.g. ">10	bin0". The header in the input alignments 
+#    need to be in the format of g.g >10_whatever. The first "_" character is
+#    used to split the header of the input sequences. By using FragGeneScan 
+#    as orf predicter the header should be fine.
 #    
-#    Copyright (C) 2012 Mads Albertsen
+#    #    Copyright (C) 2012 Mads Albertsen
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -253,10 +259,10 @@ __DATA__
 
 =head1 SYNOPSIS
 
-script.pl  -i [-h]
+script.pl  -b/-n [-h]
 
- [-help -h]           Displays this basic usage information
- [-inbins -b]         Tab seperated binfile (name tab bin)
+ [-help -h]           Displays this basic usage information.
+ [-inbins -b]         Tab seperated binfile (format: name tab bin).
  [-nobins -n]         Flag to indicate no bins.
  
 =cut

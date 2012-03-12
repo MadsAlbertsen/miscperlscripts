@@ -196,7 +196,7 @@ __DATA__
 
 =head1 SYNOPSIS
 
-script.pl  -i [-h]
+script.pl  -i [-h -o]
 
  [-help -h]           Displays this basic usage information.
  [-manfile -i]        Input mannotator gff file. 

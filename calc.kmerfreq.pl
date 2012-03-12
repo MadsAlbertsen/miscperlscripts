@@ -252,12 +252,12 @@ __DATA__
 
 =head1 SYNOPSIS
 
-script.pl  -i [-h]
+script.pl  -i [-h -o -m -k]
 
  [-help -h]           Displays this basic usage information
  [-fastafile -i]      Input fastafile file. 
- [-outputfile -o]     Outputfile.
- [-minlength -m]      Minimum contig length (default: 10.000)
- [-kmer -k]           kmer (default: 4)
+ [-outputfile -o]     Outputfile. Tab separated tetranucleotide frequency.
+ [-minlength -m]      Minimum contig length to use for calculations (default: 10.000).
+ [-kmer -k]           kmer length (default: 4).
  
 =cut

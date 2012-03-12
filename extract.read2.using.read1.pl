@@ -5,7 +5,7 @@
 #
 #	 Used in digital normalization. First read1 library is digital normalized
 #    by khmer scripts and then read2 is extracted using the remaining read1 reads
-#    using this scripts. This ensures proper use of PE reads    
+#    using this scripts. This ensures proper use of PE reads.    
 #
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -61,9 +61,7 @@ my %read1;
 # CODE HERE
 ######################################################################
 
-open(INread1, $inread1) or die("Cannot read file: $inread1\n");
-
-
+open(INread1, $inread1) or die("Cannot read file: $inread1\n");                                    #First read in all headers in the read 1 file that need to be matched in the read 2 file.
 
 while ( my $line = <INread1> ) {
 	chomp $line;   	
@@ -78,7 +76,7 @@ close INread1;
 open(OUT, ">$outputfile") or die("Cannot create file: $outputfile\n");
 open(INread2, $inread2) or die("Cannot read file: $inread2\n");
 
-while (my $line = <INread2>)  {	
+while (my $line = <INread2>)  {	                                                                   #Look for matching read1 headers in the read2 file.
 	chomp $line;
 	if ($line =~ m/>/) {
 		if ($readfound == 1){
@@ -148,7 +146,7 @@ __DATA__
 
 =head1 NAME
 
-    vprobes.generateprobes.pl
+    extract.read2.using.read1.pl
 
 =head1 COPYRIGHT
 
@@ -169,11 +167,14 @@ __DATA__
 
 =head1 DESCRIPTION
 
+Used in digital normalization. First read1 library is digital normalized
+by khmer scripts and then read2 is extracted using the remaining read1 reads
+using this scripts. This ensures proper use of PE reads. 
 
 
 =head1 SYNOPSIS
 
-extract.read2.using.read1.pl  -i [-h]
+extract.read2.using.read1.pl  -i -p [-h -o -s]
 
  [-help -h]           Displays this basic usage information
  [-inread1 -i]        Normalized Read1.fa.

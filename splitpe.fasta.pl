@@ -3,7 +3,7 @@
 #
 #    splitpe.fasta.pl
 #
-#	 Splits a merged paired end fastafile.
+#	 Splits a combined paired end fastafile.
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -155,13 +155,13 @@ __DATA__
 
 =head1 DESCRIPTION
 
-	Splits a merged paired end fastafile.
+	Splits a combined paired end fastafile.
 
 =head1 SYNOPSIS
 
 script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
- [-inputfile -i]      Input merged paried end fasta file.
+ [-inputfile -i]      Input compined paried end fasta file.
  
 =cut

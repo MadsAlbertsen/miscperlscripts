@@ -173,11 +173,11 @@ __DATA__
 
 =head1 SYNOPSIS
 
-script.pl  -i [-h]
+script.pl  -m -e [-h -o]
 
  [-help -h]           Displays this basic usage information
  [-manfile -m]        tab formated mannotator file.
  [-edatafile -e]      tab formated extra data file. First column must be contig id.
- [-outfile -m]        Outfile.
+ [-outfile -o]        Outfile.
  
 =cut

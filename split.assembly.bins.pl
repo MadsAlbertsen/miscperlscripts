@@ -4,7 +4,7 @@
 #    split.assembly.bins.pl
 #
 #	 Splits a fasta file into different fasta files based on a binning file
-#    The binning need to be scaffoldname tab bin
+#    The binning need to be scaffoldname "tab" bin.
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -186,10 +186,10 @@ __DATA__
 
 =head1 SYNOPSIS
 
-script.pl  -i [-h]
+script.pl  -i -b [-h]
 
  [-help -h]           Displays this basic usage information
- [-inputfile -i]      Inputfile. 
- [-inbins -b]         Tab seperated binfile (name tab bin)
+ [-inputfile -i]      Input fasta file. 
+ [-inbins -b]         Tab seperated binfile (format: name tab bin)
  
 =cut

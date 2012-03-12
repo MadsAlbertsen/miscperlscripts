@@ -3,7 +3,7 @@
 #
 #    splitpe.fastq.pl
 #
-#	 Splits a merged fastq file.
+#	 Splits a combined fastq file.
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -175,6 +175,6 @@ __DATA__
 script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
- [-inputfile -i]      Input merged pe fastq file.
+ [-inputfile -i]      Input combined pe fastq file.
  
 =cut
