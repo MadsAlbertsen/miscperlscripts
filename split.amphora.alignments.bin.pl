@@ -3,7 +3,10 @@
 #
 #    split.amphora.alignments.bins.pl
 #
-#	 Processes the .aln files output by Amphora2. Creates stats on the number 
+#    Needed input: fasta aligned .aln files produced by Amphora2 without 
+#    reference alignments included. 
+#     
+#    Processes the .aln files output by Amphora2. Creates stats on the number 
 #    of genes and creates combined aligned files that can quickly be scanned through.
 #    In addition the program can split the results into different files based 
 #    on an input bin file. The bin file needs to be in the format 
@@ -51,9 +54,9 @@ my $global_options = checkParams();
 my $inbins;
 my $nobins;
 
-#$inputfile = &overrideDefault("inputfile.fasta",'inputfile');
 $inbins = &overrideDefault("inbins.tab",'inbins');
 $nobins = &overrideDefault("0",'nobins');
+$dir = &overrideDefault(".",'dir');
 
 
 my $header;
@@ -91,7 +94,7 @@ if ($nobins == 0){
 
 #Read in the different alignments one by one
 
-opendir(DIR, '.') or die "Cannot open dir $!";
+opendir(DIR, $dir) or die "Cannot open dir $!";
 my $filename;
 
 foreach my $bin (sort keys %bins) {
@@ -196,7 +199,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inbins|b:s","nobins|n+");
+    my @standard_options = ( "help|h+", "inbins|b:s","nobins|n+", "dir|d:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -259,10 +262,13 @@ __DATA__
 
 =head1 SYNOPSIS
 
+.aln files in fasta format needs to be in the working directory.
+
 script.pl  -b/-n [-h]
 
  [-help -h]           Displays this basic usage information.
  [-inbins -b]         Tab seperated binfile (format: name tab bin).
  [-nobins -n]         Flag to indicate no bins.
+ [-dir -d]            Directory with .aln files. (Default: working directory ".").
  
 =cut
