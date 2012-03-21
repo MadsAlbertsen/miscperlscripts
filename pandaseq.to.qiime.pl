@@ -142,6 +142,8 @@ while ( my $line = <INsid> ) {
 	my $tempheader = $splitline1[0].".".$splitline1[1].".".$splitline1[2].".".$splitline1[3].".".$splitline1[9];
 	$sdisc{$tempheader} = $splitline[1];	
 	$sid{$tempheader} = $barcode{$sampleid};	
+	$tempheader =~ s/>//g;                                                                        #No > or - allowed in the map file.. Hence we replace them by "." r nothing.
+	$tempheader =~ s/-/./g;                                                                        
 	print OUTmap "$splitline[1]\t$barcode{$sampleid}\tYATGCTGCCTCCCGTAGGAGT\tNA\tNA\t$tempheader\n";		
 }
 close INsid;
