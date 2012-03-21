@@ -136,10 +136,10 @@ open(INsid, "$sampleidfile") or die("Cannot open file $sampleidfile\n");	       
 print "\nReading sampleid file and creating map.txt.\n\n";
 while ( my $line = <INsid> ) {
 	chomp $line;
-	my @splitline = split(/\t/,$line);
+	my @splitline = split(/\t/,$line);	
 	$sampleid++;
 	my @splitline1 = split(/:/,$splitline[0]);
-	my $tempheader = $splitline1[0].".".$splitline1[1].".".$splitline1[2].".".$splitline1[3].".".$splitline1[7];
+	my $tempheader = $splitline1[0].".".$splitline1[1].".".$splitline1[2].".".$splitline1[3].".".$splitline1[9];
 	$sdisc{$tempheader} = $splitline[1];	
 	$sid{$tempheader} = $barcode{$sampleid};	
 	print OUTmap "$splitline[1]\t$barcode{$sampleid}\tYATGCTGCCTCCCGTAGGAGT\tNA\tNA\t$tempheader\n";		
@@ -260,7 +260,7 @@ while (my $line = <INreads>)  {
 			$scount{$tempheader} = 1;
 		}				
 		if (exists($sdisc{$tempheader})){			
-			print OUTseq "$sdisc{$tempheader}_$scount{$tempheader} orig_bc=$headerid[7] new_bc=$sid{$tempheader} bc_diffs=0\n";
+			print OUTseq ">$sdisc{$tempheader}_$scount{$tempheader} orig_bc=$headerid[7] new_bc=$sid{$tempheader} bc_diffs=0\n";
 			print OUTseq "$line\n";
 			my $templength = length($line);
 			if ($templength > $maxlength){
