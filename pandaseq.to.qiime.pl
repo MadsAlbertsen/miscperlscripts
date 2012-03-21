@@ -8,6 +8,11 @@
 #    The sampleid file must contain a sequence header from each sample
 #    separated by tab and a proper sampleid, e.g.:
 #    >HWI-ST1040:49:D0HVDACXX:1:1101:4215:2592:AAGGCTAC "tab" n.1a2.p
+#       
+#    The removal of sequences below X coverage assumes that different libraries
+#    are supplied sequential in the file. Note this function stores a whole 
+#    library in memory to do it fast - if you have millions of reads per library
+#    then watch the memory usage.
 #
 #    #    Copyright (C) 2012 Mads Albertsen
 #
@@ -48,15 +53,33 @@ my $dir;
 my $sampleidfile;
 my $subsample;
 my $infile;
+my $badout;
+my $unique;
 
 $dir = &overrideDefault(".",'dir');
 $sampleidfile = &overrideDefault("0",'sampleidfile');
 $subsample = &overrideDefault("0",'subsample');
 $infile = &overrideDefault("merged.reads.fasta",'infile');
+$badout = &overrideDefault("0",'badout');
+$unique = &overrideDefault("0",'unique');
 
 my $filename;
 my $sampleid = 0;
 my $barcodecounter = 0;
+my $minlength = 10000;
+my $maxlength = 0;
+my $linenr = 0;
+my $headernr = 0;
+my $seqnr = 0;
+my $header;
+my $rheader;
+my $rprevheader;
+my $firstline = 0;
+my $uniquecount=0;
+my $uniquecountafter=0;
+my $totalcount=0;
+my $totalcountafter=0;
+my $tsampleid;
 my @headerid;
 my @probes;
 my %barcode;
@@ -64,21 +87,26 @@ my %sdisc;
 my %sid;
 my %seqlength;
 my %histogram;
-my $minlength = 10000;
-my $maxlength = 0;
+my %scount;
+my %ucount;
+my %useq;
 
 
 ######################################################################
 # CODE HERE
 ######################################################################
 
+
 open(OUTmap, ">map.txt") or die("Cannot create file: map.txt\n");
 open(OUTseq, ">seqs.fna") or die("Cannot create file: seqs.txt\n");
-open(OUThist, ">histograms.txt") or die("Cannot create file: histograms.txt\n");
-open(OUTbad, ">no.known.header.txt") or die("Cannot create file: no.known.header.txt\n");
+open(OUThist, ">histograms.txt") or die("Cannot create file: length.histogram.txt\n");
+if ($badout == 1){
+	open(OUTbad, ">no.known.header.txt") or die("Cannot create file: no.known.header.txt\n");
+}
 open(INreads, "$infile") or die("Cannot open: $infile\n");
 print OUTmap "#SampleID\tBarcodeSequence\tLinkerPrimerSequence\tTreatment\tDOB\tDescription\n";
 
+############################ Generating new barcodes ###############################################
 push (@probes,"NNNNNAAAA");                                                                         #Generating 4^5 new barcodes (1024...) should be enoungh..
 foreach my $probe (@probes){
 	if ($probe =~ m/N/) { 								
@@ -103,8 +131,9 @@ foreach my $probe (@probes){
 		$barcode{$barcodecounter} = $probe;
 	}
 }
-
+############################ Reading sample id file ##############################################
 open(INsid, "$sampleidfile") or die("Cannot open file $sampleidfile\n");	                       #Load the sample info file
+print "\nReading sampleid file and creating map.txt.\n\n";
 while ( my $line = <INsid> ) {
 	chomp $line;
 	my @splitline = split(/\t/,$line);
@@ -116,16 +145,105 @@ while ( my $line = <INsid> ) {
 	print OUTmap "$splitline[1]\t$barcode{$sampleid}\tYATGCTGCCTCCCGTAGGAGT\tNA\tNA\t$tempheader\n";		
 }
 close INsid;
+close OUTmap;
 
+############################ Removing sequences with count < $unique ##############################
+if ($unique > 0){                                                                                  #Hashfilter to remove sequences with abundance < X
+	print "Removing sequences with count < $unique (reduced.$infile and reduced.stats.txt).\n\n";
+	open(OUTreduced, ">reduced.$infile") or die("Cannot create file: reduced.$infile\n");            #Make a file to store the reduced data in.
+	open(OUTredstats, ">reduced.stats.txt") or die("Cannot create file: reduced.stats.txt\n");            #Make a file to store the reduced data in.
+	print "sample.id\ttotal\ttotal.after\tunique\tunique.after\n";
+	print OUTredstats "sample.id\ttotal\ttotal.after\tunique\tunique.after\n";
+	while (my $line = <INreads>)  {	                                                                   
+		chomp $line;
+		$firstline++;
+		if ($firstline == 1){
+			@headerid = split(/:/,$line);
+			$rheader = $headerid[0].".".$headerid[1].".".$headerid[2].".".$headerid[3].".".$headerid[7]; 			
+		}
+		if ($headernr == 0) {
+			$rprevheader = $rheader;
+			@headerid = split(/:/,$line);
+			$rheader = $headerid[0].".".$headerid[1].".".$headerid[2].".".$headerid[3].".".$headerid[7]; 
+			$headernr = 1;					
+			$header = $line;
+		}
+		else{
+			$headernr = 0;	
+			$totalcount++;
+			if (exists($ucount{$line})){
+				$ucount{$line} = $ucount{$line} + 1;                        # key = seq, value = count				
+			}
+			else{
+				$ucount{$line} = 1;	
+				$uniquecount++;
+			}		
+			$useq{$header} = $line;                      #key header, value sequence
+			if ($rprevheader ne $rheader){
+				foreach my $sequenceheader (keys %useq){
+					if ($ucount{$useq{$sequenceheader}} >= $unique){						
+						print OUTreduced "$sequenceheader\n";
+						print OUTreduced "$useq{$sequenceheader}\n";						
+					}
+				}
+				foreach my $tkey (keys %ucount){
+					if ($ucount{$tkey} >= $unique){
+						$totalcountafter = $totalcountafter + $ucount{$tkey};
+						$uniquecountafter++;
+					}	
+				}
+				%useq = ();
+				%ucount = ();
+				if (exists $sdisc{$rprevheader}){
+					$tsampleid = $sdisc{$rprevheader};
+				}
+				else{
+					$tsampleid = "unknown";
+				}
+				print "$tsampleid\t$totalcount\t$totalcountafter\t$uniquecount\t$uniquecountafter\n";
+				print OUTredstats "$tsampleid\t$totalcount\t$totalcountafter\t$uniquecount\t$uniquecountafter\n";
+				$uniquecount=0;
+				$uniquecountafter=0;
+				$totalcount=0;
+				$totalcountafter=0;
+			}
+		}	
+	}
+	
+	foreach my $sequenceheader (keys %useq){                                                       #stupiud solution to capture the last entry..
+		if ($ucount{$useq{$sequenceheader}} >= $unique){						
+			print OUTreduced "$sequenceheader\n";
+			print OUTreduced "$useq{$sequenceheader}\n";						
+			}
+	}
+	foreach my $tkey (keys %ucount){
+		if ($ucount{$tkey} >= $unique){
+			$totalcountafter = $totalcountafter + $ucount{$tkey};
+			$uniquecountafter++;
+		}				
+	}
+	%useq = ();
+	%ucount = ();
+	if (exists $sdisc{$rprevheader}){
+		$tsampleid = $sdisc{$rprevheader};
+	}
+	else{
+		$tsampleid = "unknown";
+	}
+	print "$tsampleid\t$totalcount\t$totalcountafter\t$uniquecount\t$uniquecountafter\n";
+	print OUTredstats "$tsampleid\t$totalcount\t$totalcountafter\t$uniquecount\t$uniquecountafter\n";
+	close INreads;
+	close OUTreduced;
+	close OUTredstats;
+	open(INreads, "reduced.$infile") or die("Cannot open: reduced$infile\n");
+}
 
-my $linenr = 0;
-my $headernr = 0;
-my $seqnr = 0;
-my %scount;
-$sampleid++;		
+################################## Formatting reads and creating seqs.fna #########################
+print "Formatting reads and creating seqs.fna.\n";		
 while (my $line = <INreads>)  {	                                                                   
 	chomp $line;
 	if ($headernr == 0) {
+		$header = $line;
 		@headerid = split(/:/,$line);
 		$headernr = 1;					
 	}
@@ -160,13 +278,16 @@ while (my $line = <INreads>)  {
 			}
 		}
 		else{
-			my $tempheader = $headerid[0].".".$headerid[1].".".$headerid[2].".".$headerid[3].".".$headerid[7];
-			print OUTbad "$tempheader";
-			print OUTbad "$line\n";
+			if ($badout == 1){				
+				print OUTbad "$header\n";
+				print OUTbad "$line\n";
+			}
 		}
 	}
 }
 
+################################### Make a histogram of the readlength #############################
+print "Making histograms of read lengths (length.histogram.txt).\n";
 for (my $count = $minlength; $count <= $maxlength; $count++){                                      #Make a histogram of the readlength
 	$histogram{$count} = $count;
 	foreach my $tempid (sort keys %sdisc){
@@ -190,16 +311,11 @@ foreach my $tkeys (sort{$a<=>$b} keys %histogram){                              
 	print OUThist "$histogram{$tkeys}\n";
 }
 
-foreach my $tkeys (keys %scount){                                                 #Numerical sort added
-	print "$tkeys $scount{$tkeys}\n";
-}
-
-
-
-close OUTmap;
 close OUTseq;
 close OUThist;
-close OUTbad;
+if ($badout == 1){
+	close OUTbad;
+}
 close INreads;
 
 ######################################################################
@@ -209,7 +325,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "infile|i:s","sampleidfile|s:s","subsample|m:s");
+    my @standard_options = ( "help|h+", "infile|i:s","sampleidfile|s:s","subsample|m:s","badout|b:+","unique|u:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -272,11 +388,13 @@ __DATA__
 
 Write a few words..
 
-script.pl  -i -s [-h -m]
+script.pl  -i -s [-h -m -b]
 
  [-help -h]           Displays this basic usage information.
  [-infile -i]         Single merged pandaseq output file in fasta format. 
  [-sampleidfile -s]   File containing sample id for each file must be as filename "tab" sampleid.
  [-subsample -m]      Only use the first X reads (default: off).
+ [-badout -b]         Print non sampleid sequences to a file (default: no flag).
+ [-unique -u]         Keep sequences above X (default: 0).
  
 =cut
