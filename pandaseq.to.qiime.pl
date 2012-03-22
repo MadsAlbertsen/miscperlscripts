@@ -104,7 +104,7 @@ if ($badout == 1){
 	open(OUTbad, ">no.known.header.txt") or die("Cannot create file: no.known.header.txt\n");
 }
 open(INreads, "$infile") or die("Cannot open: $infile\n");
-print OUTmap "#SampleID\tBarcodeSequence\tLinkerPrimerSequence\tTreatment\tDOB\tDescription\n";
+print OUTmap "#SampleID\tBarcodeSequence\tLinkerPrimerSequence\tOrg.Header\tDescription\n";
 
 ############################ Generating new barcodes ###############################################
 push (@probes,"NNNNNAAAA");                                                                         #Generating 4^5 new barcodes (1024...) should be enoungh..
@@ -142,9 +142,8 @@ while ( my $line = <INsid> ) {
 	my $tempheader = $splitline1[0].".".$splitline1[1].".".$splitline1[2].".".$splitline1[3].".".$splitline1[9];
 	$sdisc{$tempheader} = $splitline[1];	
 	$sid{$tempheader} = $barcode{$sampleid};	
-	$tempheader =~ s/>//g;                                                                        #No > or - allowed in the map file.. Hence we replace them by "." r nothing.
-	$tempheader =~ s/-/./g;                                                                        
-	print OUTmap "$splitline[1]\t$barcode{$sampleid}\tYATGCTGCCTCCCGTAGGAGT\tNA\tNA\t$tempheader\n";		
+	$tempheader =~ s/>//g;                                                                        #No > or - allowed in the map file.. Hence we replace them by "." r nothing.                                                                     
+	print OUTmap "$splitline[1]\t$barcode{$sampleid}\tNA\t$tempheader\tNA\n";		
 }
 close INsid;
 close OUTmap;
