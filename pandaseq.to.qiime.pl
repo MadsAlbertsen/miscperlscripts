@@ -104,7 +104,7 @@ if ($badout == 1){
 	open(OUTbad, ">no.known.header.txt") or die("Cannot create file: no.known.header.txt\n");
 }
 open(INreads, "$infile") or die("Cannot open: $infile\n");
-print OUTmap "#SampleID\tBarcodeSequence\tLinkerPrimerSequence\tOrg.Header\tDescription\n";
+print OUTmap "#SampleID\tBarcodeSequence\tLinkerPrimerSequence\tOrgHeader\tDescription\n";
 
 ############################ Generating new barcodes ###############################################
 push (@probes,"NNNNNAAAA");                                                                         #Generating 4^5 new barcodes (1024...) should be enoungh..
