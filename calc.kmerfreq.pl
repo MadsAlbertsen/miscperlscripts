@@ -45,15 +45,19 @@ my $fastafile;;
 my $outfile;
 my $minlength;
 my $kmerlength;
+my $split;
 
 $fastafile = &overrideDefault("inputfile.fasta",'fastafile');
 $outfile = &overrideDefault("outfile.tab",'outfile');
 $minlength = &overrideDefault("10000",'minlength');
 $kmerlength = &overrideDefault("4",'kmer');
+$split = &overrideDefault("0",'split');
 
-my $line;
 my $kmerlengthprobe;
 my $header;
+my $seq;
+my $prevheader;
+my $subseq;
 my $sequence;
 my $count = -1;
 my $printreadcount = 0;
@@ -69,19 +73,71 @@ my %kmer;
 # CODE HERE
 ######################################################################
 
+if ($split != 0){
+	my $counttemp = 0;
+	open(INtemp, $fastafile) or die("Cannot open $fastafile\n");
+	open(OUTtemp, ">$fastafile.sub.$split.fa") or die("Cannot open $fastafile\n");
+	while ( my $line = <INtemp>) {
+		chomp $line; 
+		if ($line =~ m/>/) {		
+			$prevheader = $header;
+			$header = $line;	
+			my $count2 = 0;
+			if (($minlength <= length($seq)) and ($counttemp > 0)) {
+				for ($count2 = 0; ($count2+$split*2) < length($seq); $count2=$count2+$split)  {
+					my $enddist = $count2+$split;
+					print OUTtemp "$prevheader.$count2.$enddist\n";
+					$subseq = substr($seq,$count2,$split);
+					print OUTtemp "$subseq\n";			
+				}
+			my $endlength = length($seq);
+			$subseq = substr($seq,$count2,$endlength);			
+			print OUTtemp "$prevheader.$count2.$endlength\n";
+			print OUTtemp "$subseq\n";	
+			}
+			$counttemp++;
+			$seq = "";
+		}
+		else{
+			$seq = $seq.$line;
+		}
+	}
+	my $count2 = 0;
+	if ($minlength <= length($seq)) {
+		my $endlength2 = length($seq);
+		print "$endlength2\n";
+		print "here\n";
+		for ($count2 = 0; ($count2+$split*2) < length($seq); $count2=$count2+$split)  {
+			my $enddist = $count2+$split;
+			print OUTtemp "$header.$count2.$enddist\n";
+			$subseq = substr($seq,$count2,$split);
+			print OUTtemp "$subseq\n";			
+		}
+		my $endlength = length($seq);
+		$subseq = substr($seq,$count2,$endlength);			
+		print OUTtemp "$header.$count2.$endlength\n";
+		print OUTtemp "$subseq\n";	
+	}
+	close INtemp;
+	close OUTtemp;
+	$fastafile = "$fastafile.sub.$split.fa";	
+	$minlength = $split-1;
+}
+
+
+
+
 open(IN, $fastafile) or die("Cannot open $fastafile\n");
 open(OUT, ">$outfile") or die("Cannot create $outfile\n");
 
-#Create all possible kmers
-
-for (my $count2 = 0; $count2 < $kmerlength; $count2++)  {
+for (my $count2 = 0; $count2 < $kmerlength; $count2++)  {                                          #Create all possible kmers
 	$kmerlengthprobe = $kmerlengthprobe."N";
 }
 
 push (@probes,$kmerlengthprobe);
 
 foreach my $probe (@probes){
-	if ($probe =~ m/N/) { 								# X or N = A, C or T
+	if ($probe =~ m/N/) { 								
 		my $temp1 = $probe;
 		$temp1 =~ s/N/A/;											
 		push (@probes, "$temp1");						
@@ -108,19 +164,19 @@ foreach my $probe (@probes){
 }
 print OUT "$output\n";	
 
-while ( $line = <IN> ) {
+while ( my $line = <IN> ) {
 	chomp $line;
 	$totalkmers = 0;
 	$count++;	
-	foreach my $probe1 (@kmerheader){                                                                                     #reset kmers
+	foreach my $probe1 (@kmerheader){                                                              #reset kmers
 		$kmer{$probe1} = 0;		
 	}
 	if ($line =~ m/>/) { 	
 		if ($minlength <= length($sequence) and $count > 0) {
 			for (my $count2 = 0; $count2 < length($sequence); $count2++)  {
-				if (exists($kmer{substr($sequence,$count2,$kmerlength)})){                                                    #to escape N's in scaffolds
+				if (exists($kmer{substr($sequence,$count2,$kmerlength)})){                         #to escape N's in scaffolds
 					$kmer{substr($sequence,$count2,$kmerlength)}++;				
-					my $rc = reverse(substr($sequence,$count2,$kmerlength));                                                  #Add reverse complement to escape string bias
+					my $rc = reverse(substr($sequence,$count2,$kmerlength));                       #Add reverse complement to escape string bias
 					$rc =~ tr/ACGT/TGCA/;		
 					$kmer{$rc}++;
 					$totalkmers+= 2;
@@ -150,11 +206,9 @@ while ( $line = <IN> ) {
 	}
 }
 
-####################stupid solution to get the last sequence...
-
 $count++;
 $totalkmers = 0;
-if ($minlength <= length($sequence)) {
+if ($minlength <= length($sequence)) {                                                             #Stupid solution to get the last sequence...
 	foreach my $probe1 (@kmerheader){                                                                                    
 		$kmer{$probe1} = 0;		
 	}
@@ -188,7 +242,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "fastafile|i:s", "outfile|o:s", "minlength|m:s", "kmer|k:s");
+    my @standard_options = ( "help|h+", "fastafile|i:s", "outfile|o:s", "minlength|m:s", "kmer|k:s", "split|s:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -259,5 +313,6 @@ script.pl  -i [-h -o -m -k]
  [-outputfile -o]     Outputfile. Tab separated tetranucleotide frequency.
  [-minlength -m]      Minimum contig length to use for calculations (default: 10.000).
  [-kmer -k]           kmer length (default: 4).
+ [-split -s]          Split sequences in subsequences of length -s (default: no split).
  
 =cut
