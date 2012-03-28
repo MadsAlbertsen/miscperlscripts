@@ -49,7 +49,8 @@ $outputfile = &overrideDefault("out.fa",'outputfile');
 $minlength = &overrideDefault("100",'minlength');
  
 my $line;
-my $header;
+my $header = "error";
+my $prevheader = "error";
 my $seq;
 my $count = 0;
 
@@ -60,25 +61,30 @@ my $count = 0;
 open(IN, $inputfile) or die("Cannot open $inputfile\n");
 open(OUT, ">$outputfile") or die("Cannot create $outputfile");
 
-while (my $line = <IN>)  {	
-	chomp $line;
-	$count++;
-	if ($line =~ m/>/) {		
-		if (($count > 1) and (length($seq) >= $minlength)){
-			print OUT "$header\n";
-			print OUT "$seq\n";			
+while ( my $line = <IN> ) {
+	chomp $line; 
+	if ($line =~ m/>/) {
+		$prevheader = $header;
+		$header = $line;
+		if($count > 0){
+			if (length($seq) > $minlength-1){
+				print OUT "$prevheader\n";
+				print OUT "$seq\n";
+			}
 		}
 		$seq = "";
-		$header = $line;		
+		$count++;
 	}
-	else{		
+	else{
 		$seq = $seq.$line;
 	}
 }
 
-print OUT "$header\n";
-print OUT "$seq\n";			
-
+if (length($seq)>$minlength-1){
+	print OUT "$header\n";
+	print OUT "$seq\n";
+}
+		
 close IN;
 close OUT;
 
