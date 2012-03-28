@@ -53,6 +53,7 @@ my $global_options = checkParams();
 #my $inputfile;
 my $inbins;
 my $nobins;
+my $dir;
 
 $inbins = &overrideDefault("inbins.tab",'inbins');
 $nobins = &overrideDefault("0",'nobins');
@@ -94,7 +95,7 @@ if ($nobins == 0){
 
 #Read in the different alignments one by one
 
-opendir(DIR, $dir) or die "Cannot open dir $!";
+opendir(DIR, $dir) or die "Cannot open dir: $dir!";
 my $filename;
 
 foreach my $bin (sort keys %bins) {
