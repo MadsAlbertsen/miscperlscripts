@@ -14,9 +14,9 @@ mannotator.totab.pl :                  Converts the mannotator gff file into tab
 
 pandaseq.remove2bases.frombarcode.pl : Removes 2 bases from the barcode in fastq files. Used to circumvent the limitation in padaseq that assumes the header to be 6 bp long.
 
-split.amphora.alignments.bin.pl :      Processes the 31 .aln files output by Amphora2. Creates stats on the number of genes and creates combined aligned files that can quickly be scanned through. In addition the program can split the results into different files based on an input bin file. The bin file needs to be in the format contigname "tab" bin. e.g. ">10	bin0". The header in the input alignments need to be in the format of g.g >10_whatever. The first "_" character is used to split the header of the input sequences. By using FragGeneScan as orf predicter the header should be fine. 
+split.amphora.alignments.bin.pl :      Processes the .aln files output by Amphora2. The output needs to be fasta formatted and without reference sequences. The script creates stats on the number of genes and creates combined aligned files that can quickly be scanned through. In addition the program can split the results into different files based on an input bin file. The bin file needs to be in the format contigname "tab" bin. e.g. ">10	bin0". The header in the input alignments need to be in the format of e.g >10_whatever. The first "_" character is used to split the header of the input sequences. By using the -DNA feature of Amphora or FragGeneScan as orf predicter the header should be fine. 
 
-split.assembly.bins.pl :               Splits a fastafile into multiple fastafiles based on a input bin file (format: fasta.header.name "tab" bin). 
+split.assembly.bins.pl :               Splits a fastafile into multiple fastafiles based on an input bin file (format: fasta.header.name "tab" bin). 
 
 splitpe.fasta.pl :                     Splits a combined paired end fasta file into two separate fasta files.
 
