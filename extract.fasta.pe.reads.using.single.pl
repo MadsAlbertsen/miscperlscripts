@@ -47,6 +47,7 @@ my $splitheader;
 my $splitfasta;
 my $print = 0;
 my $linecount = 0;
+my $printcount = 0;
 
 $inread = &overrideDefault("paired.fa",'inread');
 $insingle = &overrideDefault("single.fa",'insingle');
@@ -82,6 +83,8 @@ open(INread, $inread) or die("Cannot read file: $inread\n");
 while (my $line = <INread>)  {	                                                                   #Look for matching read1 headers in the read2 file.
 	chomp $line;
 	if ($line =~ m/>/){
+		$linecount++;
+		$printcount++;
 		my @splitline = split(/$splitheader/,$line);
 		if (exists($reads{$splitline[0]})){
 			$print = 1;
@@ -94,8 +97,12 @@ while (my $line = <INread>)  {	                                                 
 	if ($print == 1){
 		print OUT "$line\n";
 	}
+	if ($printcount == 1000000){
+		print "$linecount reads scanned - $extracted extracted\n";
+		$printcount = 0;
+	}
 }
-print "Extracted $extracted reads.\n";
+print "Extracted $extracted of $linecount reads.\n";
 close INread;
 close OUT;
 
