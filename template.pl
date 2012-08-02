@@ -46,8 +46,6 @@ my $outputfile;
 $inputfile = &overrideDefault("inputfile.txt",'inputfile');
 $outputfile = &overrideDefault("outputfile.txt",'outputfile');
  
-my $line;
-
 
 ######################################################################
 # CODE HERE
@@ -57,7 +55,7 @@ my $line;
 open(IN, $inputfile) or die("Cannot read file: $inputfile\n");
 open(OUT, ">$outputfile") or die("Cannot create file: $outputfile\n");
 
-while ( $line = <IN> ) {
+while ( my $line = <IN> ) {
 	chomp $line;   	
 
 }

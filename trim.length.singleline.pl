@@ -43,16 +43,19 @@ my $global_options = checkParams();
 my $inputfile;
 my $outputfile;
 my $minlength;
+my $stopcount;
 
 $inputfile = &overrideDefault("inputfile.fa",'inputfile');
 $outputfile = &overrideDefault("out.fa",'outputfile');
 $minlength = &overrideDefault("100",'minlength');
+$stopcount = &overrideDefault("1000000000000000",'stopcount');
  
 my $line;
 my $header = "error";
 my $prevheader = "error";
 my $seq;
 my $count = 0;
+my $seqsout = 0;
 
 ######################################################################
 # CODE HERE
@@ -63,6 +66,7 @@ open(OUT, ">$outputfile") or die("Cannot create $outputfile");
 
 while ( my $line = <IN> ) {
 	chomp $line; 
+	last if ($seqsout == $stopcount);
 	if ($line =~ m/>/) {
 		$prevheader = $header;
 		$header = $line;
@@ -70,6 +74,7 @@ while ( my $line = <IN> ) {
 			if (length($seq) > $minlength-1){
 				print OUT "$prevheader\n";
 				print OUT "$seq\n";
+				$seqsout++;
 			}
 		}
 		$seq = "";
@@ -80,7 +85,7 @@ while ( my $line = <IN> ) {
 	}
 }
 
-if (length($seq)>$minlength-1){
+if ((length($seq)>$minlength-1) and ($seqsout != $stopcount)){
 	print OUT "$header\n";
 	print OUT "$seq\n";
 }
@@ -97,7 +102,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "minlength|m:s");
+    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "minlength|m:s", "stopcount|s:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -166,5 +171,6 @@ script.pl  -i [-h]
  [-inputfile -i]      Input compined paried end fasta file.
  [-outputfile -o]     Optional outputfile (default: out.fa).
  [-minlength -m]      Minimum length of reads (default: 100).
+ [-stopcount -s]      Max number of sequences to output.
  
 =cut
