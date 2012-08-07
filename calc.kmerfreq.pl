@@ -185,7 +185,7 @@ while ( my $line = <IN> ) {
 			if ($totalkmers > 0){
 				foreach my $probe1 (@kmerheader){				
 					my $temp1 = $kmer{$probe1}/$totalkmers;				
-					$output = $output."\t$temp1";
+					$output = $output."\t".sprintf("%.8f",$temp1);
 				}
 			print OUT "$output\n";
 			$seqcountgood++;
@@ -224,7 +224,7 @@ if ($minlength <= length($sequence)) {                                          
 	$output = $header;
 	foreach my $probe1 (@kmerheader){
 		my $temp1 = $kmer{$probe1}/$totalkmers;
-		$output = $output."\t$temp1";
+		$output = $output."\t".sprintf("%.6f",$temp1);
 	}
 	print OUT "$output\n";	
 }
