@@ -44,17 +44,20 @@ my $global_options = checkParams();
 
 my $inputfile;
 my $outputfile;
-my $endcor;
+my $minlength;
+
 
 $inputfile = &overrideDefault("inputfile.txt",'inputfile');
 $outputfile = &overrideDefault("outputfile.txt",'outputfile');
-$endcor = &overrideDefault("0",'endcor');
+$minlength = &overrideDefault("0",'minlength');
 
 my %clength;
 my %ccov;
-my $contig = "none";
-my $prevcontig = "none";
+my $contig = "contig";
+my $prevcontig = "prevcontig";
 my $ccount = 0;
+my $scount = 0;
+my $scount2 = 0;
 my $totalreads = 0;
 my $totalbases = 0;
 my $tcount = 0;
@@ -67,7 +70,7 @@ my $countpos = 0;
 
 open(IN, $inputfile) or die("Cannot read file: $inputfile\n");
 open(OUT, ">$outputfile") or die("Cannot create file: $outputfile\n");
-print OUT "scaffold\tlength\ttotal.reads\ttotal.bases\tavg.cov\tstd.dev.\tadjusted.cov\tmedian.cov.\tpos.used.for.median.calc.\n";
+print OUT "scaffold\tavg.cov\tstd.dev.\tmedian.cov\n";
 
 
 while ( my $line = <IN> ) {
@@ -80,28 +83,26 @@ while ( my $line = <IN> ) {
 	}
 	else {
 		if ($line !~ m/(\@PG|\@HD|\@SQ)/) { 
-			$contig = $splitline[2];			
-			if (($contig eq $prevcontig) or ($ccount == 0)){
-				$totalreads++;
-				my $readlength = length($splitline[9]);				 				
-				$totalbases += $readlength;
-				for (my $count = $splitline[3]; $count < ($splitline[3]+$readlength); $count++) {					
-					$tcount++;
-					if (($count >= $endcor) and ($count <= $clength{$contig}-$endcor)){
-						if (exists($ccov{$count})){					
-							$ccov{$count}++;
-						}
-						else{
-							$ccov{$count} = 1;
-						}
-					}
+			$contig = $splitline[2];		
+			if ($ccount == 0){
+				for (my $count = 1; $count <= $clength{$contig}; $count++) {
+					$ccov{$count} = 0;
 				}
-				$tcount = 0;
+			}
+			if (($contig eq $prevcontig) or ($ccount == 0)){
+				my $readlength = length($splitline[9]);		
+				if ($readlength >= $minlength){ 				;
+					$totalbases += $readlength;
+					for (my $count = $splitline[3]; $count < ($splitline[3]+$readlength); $count++) {					
+						$tcount++;				
+						$ccov{$count}++;
+					}
+					$tcount = 0;
+				}
 			}
 			else{				                                                                                                  #calculate stats here and write to a file!
 				my $avg = $totalbases/$clength{$prevcontig};
-				my $covpos = scalar keys %ccov;
-				my $poswcov = $covpos;
+				my $covpos = $clength{$prevcontig};
 				if (my $is_even = $covpos % 2 == 0){                                                                               #To be able to get a better estimate of where the read maps in the start and end / otherwise it would just have used the start position
 					$covpos = $covpos/2;
 				}
@@ -109,36 +110,34 @@ while ( my $line = <IN> ) {
 					$covpos = ($covpos+1)/2;
 				}
 				$countpos = 0;
-				my $sum = 0;
 				my $median = 0;
-				my $stdv = 0;
 				foreach my $key (sort { $ccov{$a} <=> $ccov{$b} } keys %ccov){
 					$countpos++;
-					$sum += ($ccov{$key}-$avg)**2;
 					if ($countpos == $covpos){
 						$median = $ccov{$key}						
 					}					
 				}
-				$stdv = sqrt($sum/$countpos);
-				my $adjavg = $totalbases/$countpos;
-				print OUT "$prevcontig\t$clength{$prevcontig}\t$totalreads\t$totalbases\t$avg\t$stdv\t$adjavg\t$median\t$poswcov\n";
+				print OUT "$prevcontig\t$clength{$prevcontig}\t",sprintf("%.3f",$avg),"\t$median\n";
 				%ccov = ();
-				#To catch the new sequence
-				$totalreads = 1;
+				#To catch the new sequence				
 				my $readlength = length($splitline[9]);				 				
 				$totalbases = $readlength;
-				for (my $count = $splitline[3]; $count < ($splitline[3]+$readlength); $count++) {					
-					$tcount++;
-					if ($count >= $endcor and $count <= $clength{$contig}-$endcor){
-						if (exists($ccov{$count})){					
-							$ccov{$count}++;
-						}
-						else{
-							$ccov{$count} = 1;
-						}
-					}
-				}	
+				for (my $count = 1; $count <= $clength{$contig}; $count++) {
+					$ccov{$count} = 0;
+				}
+				if ($readlength >= $minlength){ 
+					for (my $count = $splitline[3]; $count < ($splitline[3]+$readlength); $count++) {					
+						$tcount++;				
+						$ccov{$count}++;
+					}	
+				}
 				$tcount = 0;
+				$scount++;
+				$scount2++;
+				if ($scount2 == 100){
+					print "$scount scaffolds evaluated\n";
+					$scount2 = 0;
+				}
 			}
 			$prevcontig = $contig;
 			$ccount++;
@@ -155,19 +154,14 @@ else{
 	$covpos = ($covpos+1)/2;
 }
 $countpos = 0;
-my $sum = 0;
 my $median = 0;
-my $stdv = 0;
 foreach my $key (sort { $ccov{$a} <=> $ccov{$b} } keys %ccov){
 	$countpos++;
-	$sum += ($ccov{$key}-$avg)**2;
 	if ($countpos == $covpos){
 		$median = $ccov{$key}						
 	}					
 }
-$stdv = sqrt($sum/$countpos);
-my $adjavg = $totalbases/$countpos;
-print OUT "$contig\t$clength{$contig}\t$totalreads\t$totalbases\t$avg\t$stdv\t$adjavg\t$median\t$poswcov\n";
+print OUT "$prevcontig\t$clength{$prevcontig}\t",sprintf("%.3f",$avg),"\t$median\n";
 close IN;
 close OUT;
 
@@ -178,7 +172,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "endcor|e:s");
+    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "minlength|m:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -246,6 +240,6 @@ script.pl  -i [-h]
  [-help -h]           Displays this basic usage information
  [-inputfile -i]      In SAM file. 
  [-outputfile -o]     Outputfile. 
- [-endcor -e]         Skip X bases from the start and end of the contig (default: 0).
+ [-minlength -m]      Minumum read length to use in calculations.
  
 =cut
