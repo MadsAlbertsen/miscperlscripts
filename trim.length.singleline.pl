@@ -1,9 +1,10 @@
 #!/usr/bin/env perl
 ###############################################################################
 #
-#    splitpe.fasta.pl
+#    trim.length.single.pl
 #
-#	 Splits a combined paired end fastafile.
+#	 Make a fasta file single line / sequence.
+#    Extract X sequences of minlength X and rename all using numbers.
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -44,11 +45,13 @@ my $inputfile;
 my $outputfile;
 my $minlength;
 my $stopcount;
+my $rename;
 
 $inputfile = &overrideDefault("inputfile.fa",'inputfile');
 $outputfile = &overrideDefault("out.fa",'outputfile');
 $minlength = &overrideDefault("100",'minlength');
 $stopcount = &overrideDefault("1000000000000000",'stopcount');
+$rename = &overrideDefault("0",'rename');
  
 my $line;
 my $header = "error";
@@ -72,7 +75,12 @@ while ( my $line = <IN> ) {
 		$header = $line;
 		if($count > 0){
 			if (length($seq) > $minlength-1){
-				print OUT "$prevheader\n";
+				if ($rename != 1){
+					print OUT "$prevheader\n";
+				}
+				else{
+					print OUT ">$count\n";
+				}
 				print OUT "$seq\n";
 				$seqsout++;
 			}
@@ -86,7 +94,12 @@ while ( my $line = <IN> ) {
 }
 
 if ((length($seq)>$minlength-1) and ($seqsout != $stopcount)){
-	print OUT "$header\n";
+	if ($rename != 1){
+    	print OUT "$prevheader\n";
+	}
+	else{
+		print OUT ">$count\n";
+	}
 	print OUT "$seq\n";
 }
 		
@@ -102,7 +115,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "minlength|m:s", "stopcount|s:s");
+    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "minlength|m:s", "stopcount|s:s", "rename|r:+");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -172,5 +185,6 @@ script.pl  -i [-h]
  [-outputfile -o]     Optional outputfile (default: out.fa).
  [-minlength -m]      Minimum length of reads (default: 100).
  [-stopcount -s]      Max number of sequences to output.
+ [-rename -r]         Renames sequences with a number.
  
 =cut
