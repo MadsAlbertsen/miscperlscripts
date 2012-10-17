@@ -55,6 +55,7 @@ my $subsample;
 my $infile;
 my $badout;
 my $unique;
+my $percent;
 
 $dir = &overrideDefault(".",'dir');
 $sampleidfile = &overrideDefault("0",'sampleidfile');
@@ -62,6 +63,7 @@ $subsample = &overrideDefault("0",'subsample');
 $infile = &overrideDefault("merged.reads.fasta",'infile');
 $badout = &overrideDefault("0",'badout');
 $unique = &overrideDefault("0",'unique');
+$percent = &overrideDefault("0",'percent');
 
 my $filename;
 my $sampleid = 0;
@@ -80,6 +82,7 @@ my $uniquecountafter=0;
 my $totalcount=0;
 my $totalcountafter=0;
 my $tsampleid;
+my $percent2;
 my @headerid;
 my @probes;
 my %barcode;
@@ -90,6 +93,7 @@ my %histogram;
 my %scount;
 my %ucount;
 my %useq;
+my %discard;
 
 
 ######################################################################
@@ -181,14 +185,73 @@ if ($unique > 0){                                                               
 			}		
 			$useq{$header} = $line;                      #key header, value sequence
 			if ($rprevheader ne $rheader){
-				foreach my $sequenceheader (keys %useq){
-					if ($ucount{$useq{$sequenceheader}} >= $unique){						
+########################################    DISCARD FILTER START
+				foreach my $tkey (sort { $ucount{$b} <=> $ucount{$a} } keys %ucount){		
+					if (($ucount{$tkey} >= $unique)){
+						if(($percent > 0) and (($percent*$ucount{$tkey}/100) > $unique )){
+							my $parentotu = $tkey;
+							my @nucl =  split(//, $parentotu);
+							for (my $count = 0; $count < length($parentotu); $count++) {
+								if ("A" ne $nucl[$count]){
+									my @temp = @nucl;
+									$temp[$count] = "A";
+									my $newotu = join("",@temp);
+									if (exists($ucount{$newotu})){
+										$percent2 = $ucount{$newotu}/$ucount{$parentotu}*100;	
+										if ($percent2 < $percent){
+											$discard{$newotu} = 1;
+										}
+									}
+								}
+								if ("T" ne $nucl[$count]){
+									my @temp = @nucl;
+									$temp[$count] = "T";
+									my $newotu = join("",@temp);
+									if (exists($ucount{$newotu})){
+										$percent2 = $ucount{$newotu}/$ucount{$parentotu}*100;	
+										if ($percent2 < $percent){
+											$discard{$newotu} = 1;
+										}										
+									}		
+								}
+								if ("C" ne $nucl[$count]){
+									my @temp = @nucl;
+									$temp[$count] = "C";
+									my $newotu = join("",@temp);
+									if (exists($ucount{$newotu})){
+										$percent2 = $ucount{$newotu}/$ucount{$parentotu}*100;	
+										if ($percent2 < $percent){
+											$discard{$newotu} = 1;
+										}										
+									}	
+								}
+								if ("G" ne $nucl[$count]){
+									my @temp = @nucl;
+									$temp[$count] = "G";
+									my $newotu = join("",@temp);
+									if (exists($ucount{$newotu})){
+										$percent2 = $ucount{$newotu}/$ucount{$parentotu}*100;
+										if ($percent2 < $percent){
+											$discard{$newotu} = 1;
+										}										
+									}		
+								}
+							}														
+						}
+					}
+					else{
+						$discard{$tkey} = 1;
+					}
+				}
+########################################    DISCARD FILTER END
+				foreach my $sequenceheader (keys %useq){					
+					if(!exists($discard{$useq{$sequenceheader}})){
 						print OUTreduced "$sequenceheader\n";
 						print OUTreduced "$useq{$sequenceheader}\n";						
 					}
 				}
 				foreach my $tkey (keys %ucount){
-					if ($ucount{$tkey} >= $unique){
+					if (($ucount{$tkey} >= $unique) and (!exists($discard{$tkey}))){
 						$totalcountafter = $totalcountafter + $ucount{$tkey};
 						$uniquecountafter++;
 					}	
@@ -210,18 +273,77 @@ if ($unique > 0){                                                               
 			}
 		}	
 	}
-	
-	foreach my $sequenceheader (keys %useq){                                                       #stupiud solution to capture the last entry..
-		if ($ucount{$useq{$sequenceheader}} >= $unique){						
+#####################################              STUPID WAY TO CATCH THE LAST SEQUENCE	
+########################################    DISCARD FILTER START
+				foreach my $tkey (sort { $ucount{$b} <=> $ucount{$a} } keys %ucount){		
+					if (($ucount{$tkey} >= $unique)){
+						if(($percent > 0) and (($percent*$ucount{$tkey}/100) > $unique )){
+							my $parentotu = $tkey;
+							my @nucl =  split(//, $parentotu);
+							for (my $count = 0; $count < length($parentotu); $count++) {
+								if ("A" ne $nucl[$count]){
+									my @temp = @nucl;
+									$temp[$count] = "A";
+									my $newotu = join("",@temp);
+									if (exists($ucount{$newotu})){
+										$percent2 = $ucount{$newotu}/$ucount{$parentotu}*100;	
+										if ($percent2 < $percent){
+											$discard{$newotu} = 1;
+										}
+									}
+								}
+								if ("T" ne $nucl[$count]){
+									my @temp = @nucl;
+									$temp[$count] = "T";
+									my $newotu = join("",@temp);
+									if (exists($ucount{$newotu})){
+										$percent2 = $ucount{$newotu}/$ucount{$parentotu}*100;	
+										if ($percent2 < $percent){
+											$discard{$newotu} = 1;
+										}										
+									}		
+								}
+								if ("C" ne $nucl[$count]){
+									my @temp = @nucl;
+									$temp[$count] = "C";
+									my $newotu = join("",@temp);
+									if (exists($ucount{$newotu})){
+										$percent2 = $ucount{$newotu}/$ucount{$parentotu}*100;	
+										if ($percent2 < $percent){
+											$discard{$newotu} = 1;
+										}										
+									}	
+								}
+								if ("G" ne $nucl[$count]){
+									my @temp = @nucl;
+									$temp[$count] = "G";
+									my $newotu = join("",@temp);
+									if (exists($ucount{$newotu})){
+										$percent2 = $ucount{$newotu}/$ucount{$parentotu}*100;
+										if ($percent2 < $percent){
+											$discard{$newotu} = 1;
+										}										
+									}		
+								}
+							}														
+						}
+					}
+					else{
+						$discard{$tkey} = 1;
+					}
+				}
+########################################    DISCARD FILTER END
+	foreach my $sequenceheader (keys %useq){					
+		if(!exists($discard{$useq{$sequenceheader}})){
 			print OUTreduced "$sequenceheader\n";
 			print OUTreduced "$useq{$sequenceheader}\n";						
-			}
+		}
 	}
 	foreach my $tkey (keys %ucount){
-		if ($ucount{$tkey} >= $unique){
+		if (($ucount{$tkey} >= $unique) and (!exists($discard{$tkey}))){
 			$totalcountafter = $totalcountafter + $ucount{$tkey};
 			$uniquecountafter++;
-		}				
+		}	
 	}
 	%useq = ();
 	%ucount = ();
@@ -326,7 +448,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "infile|i:s","sampleidfile|s:s","subsample|m:s","badout|b:+","unique|u:s");
+    my @standard_options = ( "help|h+", "infile|i:s","sampleidfile|s:s","subsample|m:s","badout|b:+","unique|u:s","percent|p:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -389,7 +511,7 @@ __DATA__
 
 Write a few words..
 
-script.pl  -i -s [-h -m -b]
+script.pl  -i -s [-h -m -b -u -p]
 
  [-help -h]           Displays this basic usage information.
  [-infile -i]         Single merged pandaseq output file in fasta format. 
@@ -397,5 +519,7 @@ script.pl  -i -s [-h -m -b]
  [-subsample -m]      Only use the first X reads (default: off).
  [-badout -b]         Print non sampleid sequences to a file (default: no flag).
  [-unique -u]         Keep sequences above X (default: 0).
+ [-percent -p]        Keep sequences above X (default: 0).
+ 
  
 =cut

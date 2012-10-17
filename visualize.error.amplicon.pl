@@ -42,18 +42,21 @@ BEGIN {
 my $global_options = checkParams();
 
 my $inseqs;
-my $outputfile;
+my $outstats;
 my $printmax;
 
 $inseqs = &overrideDefault("inseqs.txt",'inseqs');
-$outputfile = &overrideDefault("outputfile.txt",'outputfile');
+$outstats = &overrideDefault("outstats.txt",'outstats');
 $printmax = &overrideDefault(10,'printmax');
 
 
 my $orgseq;
 my %seqs;
+my %stats;
 my $printcount = 0;
 my @selectedotus;
+my $percent;
+my $seqcount = 0;
  
 
 ######################################################################
@@ -61,9 +64,9 @@ my @selectedotus;
 ######################################################################
 
 
-open(OUT, ">$outputfile") or die("Cannot create file: $outputfile\n");
+open(OUT, ">$outstats") or die("Cannot create file: $outstats\n");
 
-open(INseqs, $inseqs) or die("Cannot read file: $inseqs\n");
+open(INseqs, $inseqs) or die("Cannot read file: $inseqs\n");                                       #Add the sequences to a hash table
 while ( my $line = <INseqs> ) {
 	chomp $line;   
 	if ($line !~ m/>/) { 	
@@ -77,72 +80,72 @@ while ( my $line = <INseqs> ) {
 }
 close INseqs;
 
-foreach my $key (sort { $seqs{$b} <=> $seqs{$a} } keys %seqs){
+foreach my $key (sort { $seqs{$b} <=> $seqs{$a} } keys %seqs){                                     #Sort the sequences by abundance and select the X most abundant seqs
 	$printcount++;
 	if ($printcount<=$printmax){
 		push (@selectedotus, $key)
 	}
 }
 
-print OUT "Position\tNucl.Sub\tCount\tParent.OTU\n";
-
-foreach my $line (@selectedotus)  {  
-	my %otus;
-	my %otucount;   		
+foreach my $line (@selectedotus)  {                                                                #Find the abundance of all associated OTUs
 	my $parentotu = $line;
-	$otus{$line} = "0\t0";
-	$otucount{$otus{$line}} = 0;
+	$stats{$parentotu} = 100;
 	my @nucl =  split(//, $line); 
-	for (my $count = 1; $count < length($line); $count++) {
+	for (my $count = 0; $count < length($line); $count++) {
 		if ("A" ne $nucl[$count]){
 			my @temp = @nucl;
 			$temp[$count] = "A";
 			my $newotu = join("",@temp);
-			$otus{$newotu} = "$count\tA";	
-			$otucount{$otus{$newotu}} = 0;
+			if (exists($seqs{$newotu})){
+				$percent = $seqs{$newotu}/$seqs{$parentotu}*100;				
+			}
+			else{
+				$percent = 0;
+			}		
+			
+			$stats{$parentotu} = "$stats{$parentotu}\t$percent";
 		}
 		if ("T" ne $nucl[$count]){
 			my @temp = @nucl;
 			$temp[$count] = "T";
 			my $newotu = join("",@temp);
-			$otus{$newotu} = "$count\tT";	
-			$otucount{$otus{$newotu}} = 0;
+			if (exists($seqs{$newotu})){
+				$percent = $seqs{$newotu}/$seqs{$parentotu}*100;	
+			}
+			else{
+				$percent = 0;
+			}	
+			$stats{$parentotu} = "$stats{$parentotu}\t$percent";			
 		}
 		if ("C" ne $nucl[$count]){
 			my @temp = @nucl;
 			$temp[$count] = "C";
 			my $newotu = join("",@temp);
-			$otus{$newotu} = "$count\tC";	
-			$otucount{$otus{$newotu}} = 0;
+			if (exists($seqs{$newotu})){
+				$percent = $seqs{$newotu}/$seqs{$parentotu}*100;	
+			}
+			else{
+				$percent = 0;
+			}		
+			$stats{$parentotu} = "$stats{$parentotu}\t$percent";	
 		}
 		if ("G" ne $nucl[$count]){
 			my @temp = @nucl;
 			$temp[$count] = "G";
 			my $newotu = join("",@temp);
-			$otus{$newotu} = "$count\tG";	
-			$otucount{$otus{$newotu}} = 0;
-		}
-	}
-	open(INseqs, $inseqs) or die("Cannot read file: $inseqs\n");
-	while ( my $line = <INseqs> ) {
-		chomp $line;   
-		if ($line !~ m/>/) { 	
-			if (exists $otus{$line}){
-				$otucount{$otus{$line}}++;	
+			if (exists($seqs{$newotu})){
+				$percent = $seqs{$newotu}/$seqs{$parentotu}*100;	
 			}
+			else{
+				$percent = 0;
+			}
+			$stats{$parentotu} = "$stats{$parentotu}\t$percent";			
 		}
 	}
-	close INseqs;
-	foreach my $key (sort keys %otucount){
-		print OUT "$key\t$otucount{$key}\t$parentotu\n";
-	}
+	$seqcount++;
+	print OUT "$seqcount\_$seqs{$parentotu}\t$stats{$parentotu}\n";
+	delete($seqs{$parentotu});	
 }
-
-
-
-
-
-
 
 close OUT;
 
@@ -153,7 +156,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inseqs|i:s", "outputfile|o:s", "printmax|m:s");
+    my @standard_options = ( "help|h+", "inseqs|i:s", "outstats|s:s", "printmax|m:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -219,8 +222,8 @@ __DATA__
 visualize.error.amplicon.pl  -i [-o -p -h]
 
  [-help -h]           Displays this basic usage information
- [-inseqs -i]         Sequence file with all sequences.
- [-outputfile -o]     Outputfile. 
- [-printmax -m]       The number of abundant otus to use.
+ [-inseqs -i]         Sequence file with all sequences
+ [-outstats -s]       Statsfile
+ [-printmax -m]       The number of abundant otus to use
  
 =cut
