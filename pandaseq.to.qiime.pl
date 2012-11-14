@@ -258,6 +258,7 @@ if ($unique > 0){                                                               
 				}
 				%useq = ();
 				%ucount = ();
+				%discard = ();
 				if (exists $sdisc{$rprevheader}){
 					$tsampleid = $sdisc{$rprevheader};
 				}
