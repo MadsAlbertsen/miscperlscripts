@@ -67,7 +67,7 @@ while ( my $line = <IN> ) {
 	my @splitline = split(/\t/,$line);	
 	my @splitline1 = split(/;/,$splitline[1]);
 	my @splitline2 = split(/_/,$splitline[0]);
-	if (!exists($contigp{$splitline2[-4]})){
+	if (!exists($contigp{$splitline2[-5]})){
 		if (exists($splitline1[3])){
 			$contigp{$splitline2[-5]} = "$splitline1[3]"; 
 			$color{$splitline1[3]}++
