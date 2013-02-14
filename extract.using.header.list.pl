@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 ###############################################################################
 #
-#    extract.using.header.list.pl
+#    extract.using.header.list.pl - version 1.0
 #
 #	 Extracts a subset of seauences given a list of the headers to extract.
 #    
@@ -77,7 +77,7 @@ print "$count sequences to extract.\n";
 
 
 open(INseq, $insequences) or die("Cannot read file: $insequences\n");
-open(OUT, ">$insequences.subset.fa") or die("Cannot create file: $insequences.subset.fa\n");
+open(OUT, ">$outputfile") or die("Cannot create file: $outputfile\n");
 
 while ( my $line = <INseq> ) {
 	chomp $line; 
@@ -180,7 +180,7 @@ __DATA__
 
 =head1 SYNOPSIS
 
-script.pl  -i [-h]
+extract.using.header.list.pl  -i [-h] - version 1.0
 
  [-help -h]           Displays this basic usage information
  [-inlist -l]         List of headers to use for extraction.

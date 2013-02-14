@@ -1,9 +1,9 @@
 #!/usr/bin/env perl
 ###############################################################################
 #
-#    scriptname
+#    hmm.majority.vote.pl
 #
-#	 Short description
+#	 
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -43,11 +43,9 @@ my $global_options = checkParams();
 my $inputfile;
 my $outputfile;
 my $noNA;
-my $outlegend;
 
 $inputfile = &overrideDefault("inputfile.txt",'inputfile');
 $outputfile = &overrideDefault("outputfile.txt",'outputfile');
-$outlegend = &overrideDefault("outlegend.txt",'outlegend');
 $noNA = &overrideDefault(0,'noNA');
 
 my %contigp;
@@ -60,53 +58,42 @@ my %color;
 
 open(IN, $inputfile) or die("Cannot read file: $inputfile\n");
 open(OUT, ">$outputfile") or die("Cannot create file: $outputfile\n");
-open(OUT2, ">$outlegend") or die("Cannot create file: $outlegend\n");
 
 while ( my $line = <IN> ) {
 	chomp $line;   	
 	my @splitline = split(/\t/,$line);	
 	my @splitline1 = split(/;/,$splitline[1]);
 	my @splitline2 = split(/_/,$splitline[0]);
-	if (!exists($contigp{$splitline2[-5]})){
+	if (!exists($contigp{$splitline2[0]})){
 		if (exists($splitline1[3])){
-			$contigp{$splitline2[-5]} = "$splitline1[3]"; 
+			$contigp{$splitline2[0]} = "$splitline1[3]"; 
 			$color{$splitline1[3]}++
 		}
 		else{
-			$contigp{$splitline2[-5]} = "NA";
+			$contigp{$splitline2[0]} = "NA";
 		}
 	}
 	else{
 		if (exists($splitline1[3])){
-			$contigp{$splitline2[-5]} = "$contigp{$splitline2[-5]};$splitline1[3]";
+			$contigp{$splitline2[0]} = "$contigp{$splitline2[0]};$splitline1[3]";
 			$color{$splitline1[3]}++
 		}
 		else{
-			$contigp{$splitline2[-5]} = "$contigp{$splitline2[-5]};NA";
+			$contigp{$splitline2[0]} = "$contigp{$splitline2[0]};NA";
 		}
 	}
 }
 
 my $colorcount = 0;
 my $taxcolor;
-print OUT2 "x\ty\tlegend\tcolor\n";
-
 foreach my $key (sort { $color{$b} <=> $color{$a} } keys %color){
 	$colorcount++;
 	if ($colorcount < 12){
 		$color{$key} = $colorcount;	
-		print OUT2 "0\t$colorcount\t$key\t$colorcount\n";#HERE
 	}
 }
-$colorcount++;
-if ($colorcount < 12){
-	print OUT2 "0\t$colorcount\tOther\t12\n";
-}
-else{
-	print OUT2 "0\t12\tOther\t12\n";
-}
 
-close OUT2;
+print OUT "scaffold\tphylum\ttaxcolor\tall.assignments\n";
 
 foreach my $key (keys %contigp){
 	my @splitline = split(/;/, $contigp{$key});
@@ -115,7 +102,7 @@ foreach my $key (keys %contigp){
 		$taxcons{$key2}++;
 	}
 	if ($noNA == 1){
-		$taxcons{"NA"} = 0;                             #Better to just destroy the hash key..
+		$taxcons{"NA"} = 0;                             
 	}
 	my $count = 0;
 	my $temptax;
@@ -237,9 +224,8 @@ __DATA__
 script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
- [-inputfile -i]      Inputfile 
- [-outputfile -o]     Out data 
- [-outlegend -l]      Out legend data
+ [-inputfile -i]      Input file 
+ [-outputfile -o]     List 
  [-noNA -n]           Ignore ambigous assignments (flag, default no).
  
 =cut
