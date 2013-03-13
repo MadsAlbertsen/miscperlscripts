@@ -1,10 +1,9 @@
 #!/usr/bin/env perl
 ###############################################################################
 #
-#    cytoscape.extract.sub.graph.using.list.pl
+#    scriptname
 #
-#	 Given a list of nodes extracts all parts of the relating graph in a 
-#    cytoscape connection file (nodes in column 0 and 2).
+#	 Short description
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -41,87 +40,38 @@ BEGIN {
 # get input params
 my $global_options = checkParams();
 
-my $inconnections;
-my $inlist;
+my $inputfile;
+my $outputfile;
+my $name;
 
-$inconnections = &overrideDefault("incon.txt",'inconnections');
-$inlist = &overrideDefault("inlist.txt",'inlist');
-
-my %contigs;
-my %printed;
+$inputfile = &overrideDefault("inputfile.txt",'inputfile');
+$outputfile = &overrideDefault("outputfile.txt",'outputfile');
+$name = &overrideDefault("new.name",'name');
+ 
+my $count = 0;
 
 ######################################################################
 # CODE HERE
 ######################################################################
 
 
-open(INlist, $inlist) or die("Cannot read file: $inlist\n");
-open(INcon, $inconnections) or die("Cannot read file: $inconnections\n");
-open(OUT, ">$inlist.sub.txt") or die("Cannot create file: $inlist.sub.txt\n");
-open(OUTsub, ">$inconnections.sub.txt") or die("Cannot create file: $inconnections.sub.txt\n");
-open(OUTorg, ">$inlist.orginal.paint.cyto.txt") or die("Cannot create file: $inlist.orginal.paint.cyto.txt\n");
+open(IN, $inputfile) or die("Cannot read file: $inputfile\n");
+open(OUT, ">$outputfile") or die("Cannot create file: $outputfile\n");
 
-print OUTsub "node1\tinteraction\tnode2\tconnections\n";
-print OUTorg "OrgScaffolds\n";
-
-while ( my $line = <INlist> ) {
+while ( my $line = <IN> ) {
 	chomp $line;   	
-	$contigs{$line} = 1;
-	print OUTorg "$line = 1\n";
-}
-
-
-close OUTorg;
-
-my $newfound = 1;
-my $count = 0;
-
-while ($newfound == 1){
-	$newfound = 0;
-	$count++;
-	print "Pass $count\n";
-	while ( my $line = <INcon> ) {
-		chomp $line;		
-		my @splitline = split("\t",$line);
-		if (exists($contigs{$splitline[0]}) and !exists($contigs{$splitline[2]}) ){
-				$contigs{$splitline[2]} = 1;							
-				$newfound = 1;
-			}
-		if (exists($contigs{$splitline[2]}) and !exists($contigs{$splitline[0]}) ){
-				$contigs{$splitline[0]} = 1;							
-				$newfound = 1;
-			}
+	if ($line =~ m/>/) {
+		$count++;
+		print OUT ">$name.$count\n";
 	}
-	 seek(INcon,0,0);
-}
-
-foreach my $key (keys %contigs){
-	print OUT "$key\n";
-}
-
-while ( my $line = <INcon> ) {
-	chomp $line;		
-	my @splitline = split("\t",$line);
-	if (exists($contigs{$splitline[0]})){
-		print OUTsub "$line\n";
-		$printed{$splitline[0]} = 1;
-		$printed{$splitline[2]} = 1;
+	else{
+		print OUT "$line\n"
 	}
+
 }
 
-seek(INlist,0,0);
-while ( my $line = <INlist> ) {
-	chomp $line;   	
-	if (!exists($printed{$line})){
-		print OUTsub "$line\n";
-	}
-}
-
-
-close INcon;
+close IN;
 close OUT;
-close OUTsub;
-close INlist;
 
 ######################################################################
 # TEMPLATE SUBS
@@ -130,7 +80,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inlist|l:s", "inconnections|c:s");
+    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "name|n:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -196,7 +146,8 @@ __DATA__
 script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
- [-inlist -l]         List of nodes in subgraph to extract.
- [-inconnections -c]  Cytoscape connection file.
+ [-inputfile -i]      Inputfile 
+ [-outputfile -o]     Outputfile
+ [-name -n]           New name
  
 =cut

@@ -1,10 +1,9 @@
 #!/usr/bin/env perl
 ###############################################################################
 #
-#    cytoscape.extract.sub.graph.using.list.pl
+#    scriptname
 #
-#	 Given a list of nodes extracts all parts of the relating graph in a 
-#    cytoscape connection file (nodes in column 0 and 2).
+#	 Short description
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -41,87 +40,70 @@ BEGIN {
 # get input params
 my $global_options = checkParams();
 
-my $inconnections;
-my $inlist;
+my $variant;
+my $reference;
+my $outputfile;
 
-$inconnections = &overrideDefault("incon.txt",'inconnections');
-$inlist = &overrideDefault("inlist.txt",'inlist');
-
-my %contigs;
-my %printed;
+$variant = &overrideDefault("variant.csv",'variant');
+$reference = &overrideDefault("reference.fa",'reference');
+$outputfile = &overrideDefault("outputfile.txt",'outputfile');
+ 
+my $header;
+my $sequence = "";
 
 ######################################################################
 # CODE HERE
 ######################################################################
 
 
-open(INlist, $inlist) or die("Cannot read file: $inlist\n");
-open(INcon, $inconnections) or die("Cannot read file: $inconnections\n");
-open(OUT, ">$inlist.sub.txt") or die("Cannot create file: $inlist.sub.txt\n");
-open(OUTsub, ">$inconnections.sub.txt") or die("Cannot create file: $inconnections.sub.txt\n");
-open(OUTorg, ">$inlist.orginal.paint.cyto.txt") or die("Cannot create file: $inlist.orginal.paint.cyto.txt\n");
+open(IN_REF, $reference) or die("Cannot read file: $reference\n");
+open(IN_VAR, $variant) or die("Cannot read file: $variant\n");
+open(OUT, ">$outputfile") or die("Cannot create file: $outputfile\n");
 
-print OUTsub "node1\tinteraction\tnode2\tconnections\n";
-print OUTorg "OrgScaffolds\n";
-
-while ( my $line = <INlist> ) {
+while ( my $line = <IN_REF> ) {
 	chomp $line;   	
-	$contigs{$line} = 1;
-	print OUTorg "$line = 1\n";
-}
-
-
-close OUTorg;
-
-my $newfound = 1;
-my $count = 0;
-
-while ($newfound == 1){
-	$newfound = 0;
-	$count++;
-	print "Pass $count\n";
-	while ( my $line = <INcon> ) {
-		chomp $line;		
-		my @splitline = split("\t",$line);
-		if (exists($contigs{$splitline[0]}) and !exists($contigs{$splitline[2]}) ){
-				$contigs{$splitline[2]} = 1;							
-				$newfound = 1;
-			}
-		if (exists($contigs{$splitline[2]}) and !exists($contigs{$splitline[0]}) ){
-				$contigs{$splitline[0]} = 1;							
-				$newfound = 1;
-			}
+	if ($line =~ m/>/) {
+		$header = $line;
 	}
-	 seek(INcon,0,0);
-}
-
-foreach my $key (keys %contigs){
-	print OUT "$key\n";
-}
-
-while ( my $line = <INcon> ) {
-	chomp $line;		
-	my @splitline = split("\t",$line);
-	if (exists($contigs{$splitline[0]})){
-		print OUTsub "$line\n";
-		$printed{$splitline[0]} = 1;
-		$printed{$splitline[2]} = 1;
+	else{
+		$sequence = "$sequence"."$line";
 	}
 }
+close IN_REF;
 
-seek(INlist,0,0);
-while ( my $line = <INlist> ) {
+my @seq = split(//,$sequence);
+
+while ( my $line = <IN_VAR> ) {
+	next if ($line =~ m/Reference Position/);                                   #To skip first line
 	chomp $line;   	
-	if (!exists($printed{$line})){
-		print OUTsub "$line\n";
+	$line =~ s/"//g;
+	my @splitline = split(",",$line);
+	if ($splitline[3] eq "SNV"){
+		$seq[$splitline[1]-1] = $splitline[14];
+	}
+	if ($splitline[3] eq "MNV"){
+		for (my $count = $splitline[1]-1; $count <= $splitline[1]-1+$splitline[4]-1; $count++)  {
+			$seq[$count] = "";
+		}
+		$seq[$splitline[1]-1] = $splitline[14];
+	}
+    if ($splitline[3] eq "InDel"){
+		if ($splitline[4] == 0){
+			$seq[$splitline[1]-2] = "$seq[$splitline[1]-2]$splitline[14]";
+		}
+		else{
+			for (my $count = $splitline[1]-1; $count <= $splitline[1]-1+$splitline[4]-1; $count++)  {
+				$seq[$count] = "";
+			}
+		}
 	}
 }
 
+print OUT "$header.consensus\n";
+print OUT join("",@seq)."\n";
 
-close INcon;
+close IN_VAR;
 close OUT;
-close OUTsub;
-close INlist;
 
 ######################################################################
 # TEMPLATE SUBS
@@ -130,7 +112,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inlist|l:s", "inconnections|c:s");
+    my @standard_options = ( "help|h+", "variant|v:s", "reference|r:s", "outputfile|o:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -196,7 +178,8 @@ __DATA__
 script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
- [-inlist -l]         List of nodes in subgraph to extract.
- [-inconnections -c]  Cytoscape connection file.
+ [-variant -v]        CLC cvs variant file 
+ [-reference -r]      Reference fasta sequence
+ [-outputfile -o]     Outputfile 
  
 =cut

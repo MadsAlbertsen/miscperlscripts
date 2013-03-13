@@ -1,10 +1,8 @@
 #!/usr/bin/env perl
 ###############################################################################
 #
-#    cytoscape.extract.sub.graph.using.list.pl
+#    Split.scaffolds.to.contigs.pl
 #
-#	 Given a list of nodes extracts all parts of the relating graph in a 
-#    cytoscape connection file (nodes in column 0 and 2).
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -41,87 +39,52 @@ BEGIN {
 # get input params
 my $global_options = checkParams();
 
-my $inconnections;
-my $inlist;
+my $inputfile;
+my $outputfile;
+my $minlength;
+my $stopcount;
+my $rename;
 
-$inconnections = &overrideDefault("incon.txt",'inconnections');
-$inlist = &overrideDefault("inlist.txt",'inlist');
-
-my %contigs;
-my %printed;
+$inputfile = &overrideDefault("inputfile.fa",'inputfile');
+$outputfile = &overrideDefault("out.fa",'outputfile');
+ 
+my $line;
+my $header;
+my $split;
 
 ######################################################################
 # CODE HERE
 ######################################################################
+	
+open(IN, $inputfile) or die("Cannot open $inputfile\n");
+open(OUT, ">$outputfile") or die("Cannot create $outputfile");
 
-
-open(INlist, $inlist) or die("Cannot read file: $inlist\n");
-open(INcon, $inconnections) or die("Cannot read file: $inconnections\n");
-open(OUT, ">$inlist.sub.txt") or die("Cannot create file: $inlist.sub.txt\n");
-open(OUTsub, ">$inconnections.sub.txt") or die("Cannot create file: $inconnections.sub.txt\n");
-open(OUTorg, ">$inlist.orginal.paint.cyto.txt") or die("Cannot create file: $inlist.orginal.paint.cyto.txt\n");
-
-print OUTsub "node1\tinteraction\tnode2\tconnections\n";
-print OUTorg "OrgScaffolds\n";
-
-while ( my $line = <INlist> ) {
-	chomp $line;   	
-	$contigs{$line} = 1;
-	print OUTorg "$line = 1\n";
-}
-
-
-close OUTorg;
-
-my $newfound = 1;
-my $count = 0;
-
-while ($newfound == 1){
-	$newfound = 0;
-	$count++;
-	print "Pass $count\n";
-	while ( my $line = <INcon> ) {
-		chomp $line;		
-		my @splitline = split("\t",$line);
-		if (exists($contigs{$splitline[0]}) and !exists($contigs{$splitline[2]}) ){
-				$contigs{$splitline[2]} = 1;							
-				$newfound = 1;
-			}
-		if (exists($contigs{$splitline[2]}) and !exists($contigs{$splitline[0]}) ){
-				$contigs{$splitline[0]} = 1;							
-				$newfound = 1;
-			}
+while ( my $line = <IN> ) {
+	chomp $line; 
+	if ($line =~ m/>/) {
+		$header = $line;
+		print OUT "$line\n";
+		$split = 0;
 	}
-	 seek(INcon,0,0);
-}
-
-foreach my $key (keys %contigs){
-	print OUT "$key\n";
-}
-
-while ( my $line = <INcon> ) {
-	chomp $line;		
-	my @splitline = split("\t",$line);
-	if (exists($contigs{$splitline[0]})){
-		print OUTsub "$line\n";
-		$printed{$splitline[0]} = 1;
-		$printed{$splitline[2]} = 1;
+	else{ 
+		if ($line =~ m/N/) {
+			$split++;
+			my @splitline = split("N",$line);
+			print OUT "$splitline[0]\n";	
+			print OUT "$header.S$split\n";
+			print OUT "$splitline[-1]\n";
+		}
+		else{
+			print OUT "$line\n";
+		}
 	}
+
 }
-
-seek(INlist,0,0);
-while ( my $line = <INlist> ) {
-	chomp $line;   	
-	if (!exists($printed{$line})){
-		print OUTsub "$line\n";
-	}
-}
-
-
-close INcon;
+		
+close IN;
 close OUT;
-close OUTsub;
-close INlist;
+
+exit;
 
 ######################################################################
 # TEMPLATE SUBS
@@ -130,7 +93,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inlist|l:s", "inconnections|c:s");
+    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "minlength|m:s", "stopcount|s:s", "rename|r:+");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -168,7 +131,7 @@ __DATA__
 
 =head1 NAME
 
-    vprobes.generateprobes.pl
+    trim.length.singleline.pl
 
 =head1 COPYRIGHT
 
@@ -189,14 +152,14 @@ __DATA__
 
 =head1 DESCRIPTION
 
-
+	Splits a combined paired end fastafile.
 
 =head1 SYNOPSIS
 
 script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
- [-inlist -l]         List of nodes in subgraph to extract.
- [-inconnections -c]  Cytoscape connection file.
+ [-inputfile -i]      Input compined paried end fasta file.
+ [-outputfile -o]     Optional outputfile (default: out.fa).
  
 =cut
