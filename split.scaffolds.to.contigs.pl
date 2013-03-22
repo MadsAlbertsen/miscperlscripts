@@ -54,6 +54,8 @@ my $header = "error";
 my $prevheader = "error";
 my $seq;
 my $count = 0;
+my $contigs = 0;
+my $goodcontigs = 0;
 
 ######################################################################
 # CODE HERE
@@ -73,9 +75,11 @@ while ( my $line = <IN> ) {
 			my $splitcount = 0;
 			foreach (@splitline) {
 				$splitcount++;
+				$contigs++;
 				if (length($_) > $minlength-1){					
-					print "$prevheader.$splitcount\n";
-					print $_."\n";
+					print OUT "$prevheader.$splitcount\n";
+					print OUT $_."\n";
+					$goodcontigs++;
 				}
 			}
 		}
@@ -92,12 +96,20 @@ $seq =~ s/N*N/N/g;
 my @splitline = split(/N/,$seq);
 my $splitcount = 0;
 foreach (@splitline) {
-$splitcount++;
-if (length($_) > $minlength-1){					
-	print "$header.$splitcount\n";
-	print $_."\n";
+	$splitcount++;
+	$contigs++;
+	if (length($_) > $minlength-1){					
+		print OUT "$header.$splitcount\n";
+		print OUT $_."\n";
+		$goodcontigs++;
+		}
 	}
-}
+$count++;
+
+print "$count scaffolds in total\n";
+print "$contigs contigs in total\n";
+print "$goodcontigs contigs over $minlength\n";
+
 	
 close IN;
 close OUT;
