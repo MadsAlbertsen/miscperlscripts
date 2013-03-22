@@ -44,6 +44,7 @@ my $variant;
 my $reference;
 my $outputfile;
 
+
 $variant = &overrideDefault("variant.csv",'variant');
 $reference = &overrideDefault("reference.fa",'reference');
 $outputfile = &overrideDefault("outputfile.txt",'outputfile');
@@ -78,21 +79,21 @@ while ( my $line = <IN_VAR> ) {
 	chomp $line;   	
 	$line =~ s/"//g;
 	my @splitline = split(",",$line);
-	if ($splitline[3] eq "SNV"){
-		$seq[$splitline[1]-1] = $splitline[14];
+	if ($splitline[2] eq "SNV"){
+		$seq[$splitline[0]-1] = $splitline[10];
 	}
-	if ($splitline[3] eq "MNV"){
-		for (my $count = $splitline[1]-1; $count <= $splitline[1]-1+$splitline[4]-1; $count++)  {
+	if ($splitline[2] eq "MNV"){
+		for (my $count = $splitline[0]-1; $count <= $splitline[0]-1+$splitline[3]-1; $count++)  {
 			$seq[$count] = "";
 		}
-		$seq[$splitline[1]-1] = $splitline[14];
+		$seq[$splitline[0]-1] = $splitline[10];
 	}
-    if ($splitline[3] eq "InDel"){
-		if ($splitline[4] == 0){
-			$seq[$splitline[1]-2] = "$seq[$splitline[1]-2]$splitline[14]";
+    if ($splitline[2] eq "InDel"){
+		if ($splitline[3] == 0){
+			$seq[$splitline[0]-2] = "$seq[$splitline[1]-2]$splitline[10]";
 		}
 		else{
-			for (my $count = $splitline[1]-1; $count <= $splitline[1]-1+$splitline[4]-1; $count++)  {
+			for (my $count = $splitline[0]-1; $count <= $splitline[0]-1+$splitline[3]-1; $count++)  {
 				$seq[$count] = "";
 			}
 		}

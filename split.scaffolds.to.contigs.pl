@@ -1,8 +1,10 @@
 #!/usr/bin/env perl
 ###############################################################################
 #
-#    Split.scaffolds.to.contigs.pl
+#    split.scaffolds.to.contigs.pl
 #
+#	 Make a fasta file single line / sequence.
+#    Extract X sequences of minlength X and rename all using numbers.
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -42,15 +44,16 @@ my $global_options = checkParams();
 my $inputfile;
 my $outputfile;
 my $minlength;
-my $stopcount;
-my $rename;
 
 $inputfile = &overrideDefault("inputfile.fa",'inputfile');
 $outputfile = &overrideDefault("out.fa",'outputfile');
+$minlength = &overrideDefault("200",'minlength');
  
 my $line;
-my $header;
-my $split;
+my $header = "error";
+my $prevheader = "error";
+my $seq;
+my $count = 0;
 
 ######################################################################
 # CODE HERE
@@ -62,25 +65,40 @@ open(OUT, ">$outputfile") or die("Cannot create $outputfile");
 while ( my $line = <IN> ) {
 	chomp $line; 
 	if ($line =~ m/>/) {
+		$prevheader = $header;
 		$header = $line;
-		print OUT "$line\n";
-		$split = 0;
-	}
-	else{ 
-		if ($line =~ m/N/) {
-			$split++;
-			my @splitline = split("N",$line);
-			print OUT "$splitline[0]\n";	
-			print OUT "$header.S$split\n";
-			print OUT "$splitline[-1]\n";
+		if($count > 0){
+			$seq =~ s/N*N/N/g;
+			my @splitline = split(/N/,$seq);
+			my $splitcount = 0;
+			foreach (@splitline) {
+				$splitcount++;
+				if (length($_) > $minlength-1){					
+					print "$prevheader.$splitcount\n";
+					print $_."\n";
+				}
+			}
 		}
-		else{
-			print OUT "$line\n";
-		}
+		$seq = "";
+		$count++;
 	}
-
+	else{
+		$seq = $seq.$line;
+	}
 }
-		
+
+#Remember to catch the last sequence!
+$seq =~ s/N*N/N/g;
+my @splitline = split(/N/,$seq);
+my $splitcount = 0;
+foreach (@splitline) {
+$splitcount++;
+if (length($_) > $minlength-1){					
+	print "$header.$splitcount\n";
+	print $_."\n";
+	}
+}
+	
 close IN;
 close OUT;
 
@@ -131,7 +149,7 @@ __DATA__
 
 =head1 NAME
 
-    trim.length.singleline.pl
+    split.scaffolds.to.contigs.pl
 
 =head1 COPYRIGHT
 
@@ -156,10 +174,11 @@ __DATA__
 
 =head1 SYNOPSIS
 
-script.pl  -i [-h]
+split.scaffolds.to.contigs.pl  -i [-h -o -m]
 
  [-help -h]           Displays this basic usage information
- [-inputfile -i]      Input compined paried end fasta file.
- [-outputfile -o]     Optional outputfile (default: out.fa).
+ [-inputfile -i]      Input fasta file
+ [-outputfile -o]     Outputfile (default: out.fa)
+ [-minlength -m]      Minimum length of reads (default: 200)
  
 =cut
