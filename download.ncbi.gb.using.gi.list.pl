@@ -28,6 +28,7 @@ use warnings;
 
 #core Perl modules
 use Getopt::Long;
+use Bio::DB::EUtilities;
 
 #locally-written modules
 BEGIN {
@@ -41,15 +42,8 @@ BEGIN {
 my $global_options = checkParams();
 
 my $inputfile;
-my $endlength;
 
 $inputfile = &overrideDefault("inputfile.txt",'inputfile');
-$endlength = &overrideDefault(3000,'endlength');
-
-my %reads;
-my %contigs;
-my $progress = 0;
-my $mpcount = 0;
 
 ######################################################################
 # CODE HERE
@@ -57,60 +51,23 @@ my $mpcount = 0;
 
 
 open(IN, $inputfile) or die("Cannot read file: $inputfile\n");
-open(OUT1, ">p1.fa") or die("Cannot create file: p1.fa\n");
-open(OUT2, ">p2.fa") or die("Cannot create file: p2.fa\n");
 
 while ( my $line = <IN> ) {
 	chomp $line;   	
-	my @splitline = split(/\t/, $line); 	
-	if ($line =~ m/\@SQ/) {                                                                                                                          #Get the lenfth of each scaffold and store it in an array                     												                  
-			my @contigname = split(/:/, $splitline[1]);                     												  
-			my @contiglength = split(/:/, $splitline[2]);																	  
-			$contigs{$contigname[1]} = $contiglength[1];                   												  
-		}	
-	else {
-		if ($line !~ m/(\@PG|\@HD|\@SQ)/) {                                                                                                          #If we are not in the header region
-			if ( ($contigs{$splitline[2]}-$splitline[3] - length($splitline[9]) < $endlength) or ($splitline[3] < $endlength) ){                     #Check if the read map in one of the ends of the scaffolds
-				my @header = split(/_/,$splitline[0]);
-				if (exists($reads{$header[0]})){                                                                                                     #Check if the other pair of the read have been seen before
-					my @oldread = split(/\t/,$reads{$header[0]});				
-					if ($oldread[1] ne $splitline[2]){                                                                                               #Check if the two reads map to different scaffolds
-						my @readpair = split(/:/,$header[1]);
-						$mpcount++;
-						if ($readpair[0] == 1){                                                                                                      #Print the reads to the right file
-							print OUT1 ">$splitline[0]\n"; 
-							print OUT1 "$splitline[9]\n"; 						
-							print OUT2 ">$oldread[0]\n"; 
-							print OUT2 "$oldread[2]\n"; 
-						}
-						else{
-							print OUT2 ">$splitline[0]\n"; 
-							print OUT2 "$splitline[9]\n"; 
-							print OUT1 ">$oldread[0]\n"; 
-							print OUT1 "$oldread[2]\n"; 
-					
-						}
-					}
-				}
-				else{
-					$reads{$header[0]} = "$splitline[0]\t$splitline[2]\t$splitline[9]";
-				}
-			}
-			$progress++;
-			if ($progress == 1000000){
-				print "$progress reads processed\n";
-				$progress = 0;
-			}
-		}
-	}
+	my $id = $line;
+	print "Downloading GI: $line\n";
+	my $factory = Bio::DB::EUtilities->new(
+		-eutil   => 'efetch',
+		-db      => 'nucleotide',
+		-id      => $id,
+		-email   => 'mymail@foo.bar',
+		-rettype => 'gb'
+	);
+	my $outname = "$id.gb";
+	$factory->get_Response(-file => $outname);	
 }
 
-print "$progress reads processed\n";
-print "$mpcount mate-pairs extracted\n";
-
 close IN;
-close OUT1;
-close OUT2;
 
 ######################################################################
 # TEMPLATE SUBS
@@ -119,7 +76,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inputfile|i:s", "endlength|e:s");
+    my @standard_options = ( "help|h+", "inputfile|i:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -157,7 +114,7 @@ __DATA__
 
 =head1 NAME
 
-    extract.correct.mate.pairs.pl
+    vprobes.generateprobes.pl
 
 =head1 COPYRIGHT
 
@@ -182,10 +139,9 @@ __DATA__
 
 =head1 SYNOPSIS
 
-extract.correct.mate.pairs.pl  -i [-h -e]
+script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
  [-inputfile -i]      Inputfile. 
- [-endlength -e]      Output reads X bp from the ends (default: 3000)
  
 =cut
