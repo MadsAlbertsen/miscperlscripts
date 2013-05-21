@@ -1,7 +1,3 @@
-# Miscellaneous perl scripts
-
-> Misc perl scripts that might, or might not, be useful..
-
 calc.dnds.pl :                         Calculates pairwise dn/ds ratios of all input sequences. Note: the sequences have to be alligned and in fasta format. In addition its assumed they start inframe. 
 
 calc.gc.pl :                           Calculates the gc content of sequences in fasta format.
