@@ -1,8 +1,9 @@
 #!/usr/bin/env perl
 ###############################################################################
 #
-#    split.scaffolds.to.contigs.pl
+#    scriptname
 #
+#	 Short description
 #    
 #    Copyright (C) 2012 Mads Albertsen
 #
@@ -41,78 +42,57 @@ my $global_options = checkParams();
 
 my $inputfile;
 my $outputfile;
-my $minlength;
 
-$inputfile = &overrideDefault("inputfile.fa",'inputfile');
-$outputfile = &overrideDefault("out.fa",'outputfile');
-$minlength = &overrideDefault("200",'minlength');
+$inputfile = &overrideDefault("inputfile.txt",'inputfile');
+$outputfile = &overrideDefault("outputfile.txt",'outputfile');
  
-my $line;
-my $header = "error";
-my $prevheader = "error";
-my $seq;
-my $count = 0;
-my $contigs = 0;
-my $goodcontigs = 0;
-
 ######################################################################
 # CODE HERE
 ######################################################################
-	
-open(IN, $inputfile) or die("Cannot open $inputfile\n");
-open(OUT, ">$outputfile") or die("Cannot create $outputfile");
+
+
+open(IN, $inputfile) or die("Cannot read file: $inputfile\n");
+open(OUT, ">$outputfile") or die("Cannot create file: $outputfile\n");
+
+print OUT "Type\tStart\tEnd\tStrand\tTag\tGene\tECnumber\tProduct\n";
 
 while ( my $line = <IN> ) {
-	chomp $line; 
-	if ($line =~ m/>/) {
-		$prevheader = $header;
-		$header = $line;
-		if($count > 0){
-			$seq =~ s/N*N/N/g;
-			my @splitline = split(/N/,$seq);
-			my $splitcount = 0;
-			foreach (@splitline) {
-				$splitcount++;
-				$contigs++;
-				if (length($_) > $minlength-1){					
-					print OUT "$prevheader.$splitcount\n";
-					print OUT $_."\n";
-					$goodcontigs++;
-				}
-			}
-		}
-		$seq = "";
-		$count++;
+	chomp $line;
+	my @info = split(/\t/, $line);
+	next if ($info[2] =~ m/Source/);
+	next if ($info[2] =~ m/Gene/);
+	
+	my @details = split(";",$info[8]);
+	my @locus = split(" ", $details[0]);
+	
+	my $gene = "NA";
+	if ($info[8] =~ m/ ; gene/){
+		my @split1 = split(" ; gene ", $info[8]);
+		my @split2 = split(" ; ", $split1[1]);
+		$gene = $split2[0];
 	}
-	else{
-		$seq = $seq.$line;
-	}
+
+	my $ec = "NA";
+	if ($info[8] =~ m/ ; EC_number /){
+		my @split1 = split(" ; EC_number ", $info[8]);
+		my @split2 = split(" ; ", $split1[1]);
+		$ec = $split2[0];
+	}	
+	
+	my $product = "NA";
+	if ($info[8] =~ m/ ; product /){
+		my @split1 = split(" ; product ", $info[8]);
+		my @split2 = split(" ; ", $split1[1]);
+		$product = $split2[0];
+		$product =~ s/"//g; 		
+	}	
+	
+	print OUT "$info[2]\t$info[3]\t$info[4]\t$info[6]\t$locus[1]\t$gene\t$ec\t$product\n";
+	
 }
 
-#Remember to catch the last sequence!
-$seq =~ s/N*N/N/g;
-my @splitline = split(/N/,$seq);
-my $splitcount = 0;
-foreach (@splitline) {
-	$splitcount++;
-	$contigs++;
-	if (length($_) > $minlength-1){					
-		print OUT "$header.$splitcount\n";
-		print OUT $_."\n";
-		$goodcontigs++;
-		}
-	}
-$count++;
-
-print "$count scaffolds in total\n";
-print "$contigs contigs in total\n";
-print "$goodcontigs contigs over $minlength\n";
-
-	
 close IN;
 close OUT;
-
-exit;
 
 ######################################################################
 # TEMPLATE SUBS
@@ -121,7 +101,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "minlength|m:s", "stopcount|s:s", "rename|r:+");
+    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -159,7 +139,7 @@ __DATA__
 
 =head1 NAME
 
-    split.scaffolds.to.contigs.pl
+    vprobes.generateprobes.pl
 
 =head1 COPYRIGHT
 
@@ -180,15 +160,14 @@ __DATA__
 
 =head1 DESCRIPTION
 
-	Splits a combined paired end fastafile.
+
 
 =head1 SYNOPSIS
 
-split.scaffolds.to.contigs.pl  -i [-h -o -m]
+script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
- [-inputfile -i]      Input fasta file
- [-outputfile -o]     Outputfile (default: out.fa)
- [-minlength -m]      Minimum length of reads (default: 200)
+ [-inputfile -i]      Inputfile. 
+ [-outputfile -o]      Outputfile. 
  
 =cut
