@@ -151,7 +151,7 @@ close OUT;
 
 open(OUT_i, ">stats.barcode.txt") or die("Cannot create file: stats.barcode.txt\n");
 print OUT_i "Barcode1\tBarcode2\tHits\n";
-foreach my $key (sort { $index{$a} <=> $index{$b} } keys %index){                                     # Print sample specific hits
+foreach my $key (sort { $index{$b} <=> $index{$a} } keys %index){                                     # Print sample specific hits
 	my $f = substr($key, 0, 8);
 	my $r = substr($key, 8, 8);
 	print OUT_i "$f\t$r\t$index{$key}\n";
