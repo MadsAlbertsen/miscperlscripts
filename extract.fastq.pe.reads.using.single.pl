@@ -50,7 +50,7 @@ my $linecount = 0;
 
 $inread = &overrideDefault("paired.fa",'inread');
 $insingle = &overrideDefault("single.fa",'insingle');
-$splitheader = &overrideDefault("_",'splitheader');
+$splitheader = &overrideDefault(" ",'splitheader');
 $splitfasta = &overrideDefault("_",'splitfasta');
  
 my $seq = ""; 
@@ -58,6 +58,7 @@ my $readfound = 0;
 my $toextract = 0;
 my $extracted = 0;
 my %reads;
+my $count = 0;
 
 ######################################################################
 # CODE HERE
@@ -68,8 +69,9 @@ open(INsingle, $insingle) or die("Cannot read file: $insingle\n");              
 while ( my $line = <INsingle> ) {
 	chomp $line;   	
 	if ($line =~ m/>/) {
-		my @splitline = split(/$splitfasta/,$line);		
-		$reads{$splitline[0]} = 1;
+		my @splitline = split(/$splitfasta/,$line);
+		my @splitline1 = split(/>/,$splitline[0]);		
+		$reads{$splitline1[1]} = 1;
 		$toextract++;
 	}
 }
@@ -81,9 +83,10 @@ open(INread, $inread) or die("Cannot read file: $inread\n");
 
 while (my $line = <INread>)  {	                                                                   #Look for matching read1 headers in the read2 file.
 	chomp $line;
-	if ($line =~ m/>/){
+	if ($count == 0){
 		my @splitline = split(/$splitheader/,$line);
-		if (exists($reads{$splitline[0]})){
+		my @splitline1 = split(/\@/,$splitline[0]);
+		if (exists($reads{$splitline1[1]})){
 			$print = 1;
 			$extracted++;
 		}
@@ -93,6 +96,10 @@ while (my $line = <INread>)  {	                                                 
 	}			
 	if ($print == 1){
 		print OUT "$line\n";
+	}
+	$count++;
+	if ($count == 4){
+		$count = 0;
 	}
 }
 print "Extracted $extracted reads.\n";
@@ -177,7 +184,7 @@ extract.read2.using.read1.pl  -f -r -s [-h -x]
  [-help -h]           Displays this basic usage information
  [-inread -p]        pairedreads.fa.
  [-insingle -s]       Singlereads.fa. 
- [-splitheader -x]    Code used to split the header of the fastq files (default: "_")
- [-splitfasta -y]     Code used to split the header of the fasta file (default: " ")
+ [-splitheader -x]    Code used to split the header of the fastq files (default: " ")
+ [-splitfasta -y]     Code used to split the header of the fasta file (default: "_")
  
 =cut
