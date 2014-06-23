@@ -42,16 +42,18 @@ my $global_options = checkParams();
 
 my $inputfile;
 my $samplesheet;
-my $minlength;
+my $sindex;
 
 $inputfile = &overrideDefault("inputfile.txt",'inputfile');
 $samplesheet = &overrideDefault("samplesheet.csv",'samplesheet');
+$sindex = &overrideDefault(0,'sindex');
 
 my $count = 0;
 
 my %index;
 my %samples;
 my %hits;
+my $id = "";
 
 ######################################################################
 # CODE HERE
@@ -63,7 +65,11 @@ while ( my $line = <IN_s> ) {
 	my @info = split(/,/, $line);
 	my $length = scalar @info;
 	if ($length >= 8 and  $info[0] ne "Sample_ID"){
-		my $id = $info[4].$info[5];
+		if ( $sindex == 0 ){
+			$id = $info[4].$info[5];
+		} else {
+			$id = $info[4];
+		}
 		$samples{$id} = $info[1];                                                                      # Store the concatenated barcodes in the %samples hash
 		$hits{$info[1]} = 0;                                                                           # Make a hash to store the counts of each sample
 	}
@@ -77,6 +83,7 @@ my $mmatch = 0;
 my $header = "";
 my $seq = "";
 my $qual = "";
+my $i = "";
 
 open(IN, $inputfile) or die("Cannot read file: $inputfile\n");
 
@@ -93,7 +100,11 @@ while ( my $line = <IN> ) {                                                     
 		$qual = $line;
 		my $match = 0;
 		my $matchout = "";
-		my $i = substr($seq, 301, 16);                                                             # Extract the barcode
+		if ( $sindex == 0 ){
+			$i = substr($seq, 301, 16);                                                             # Extract the barcode
+		} else {
+			$i = substr($seq, 301, 8);                                                             # Extract the barcode
+		}
 		if (exists($index{$i})){
 			$index{$i}++;
 		} else {
@@ -152,9 +163,13 @@ close OUT;
 open(OUT_i, ">stats.barcode.txt") or die("Cannot create file: stats.barcode.txt\n");
 print OUT_i "Barcode1\tBarcode2\tHits\n";
 foreach my $key (sort { $index{$b} <=> $index{$a} } keys %index){                                     # Print sample specific hits
-	my $f = substr($key, 0, 8);
-	my $r = substr($key, 8, 8);
-	print OUT_i "$f\t$r\t$index{$key}\n";
+	if ( $sindex == 0 ){
+		my $f = substr($key, 0, 8);
+		my $r = substr($key, 8, 8);
+		print OUT_i "$f\t$r\t$index{$key}\n";
+	} else {
+		print OUT_i "$key\t$index{$key}\n";
+	}
 }
 close OUT_i;
 
@@ -168,7 +183,7 @@ sub checkParams {
     #-----
     # Do any and all options checking here...
     #
-    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "samplesheet|s:s");
+    my @standard_options = ( "help|h+", "inputfile|i:s", "outputfile|o:s", "samplesheet|s:s", "sindex|x:+");
     my %options;
 
     # Add any other command line options, and the code to handle them
@@ -235,6 +250,7 @@ script.pl  -i [-h]
 
  [-help -h]           Displays this basic usage information
  [-inputfile -i]      Complete fastq file.
- ]-samplesheet -s}    Samplesheet.
- 
+ [-samplesheet -s]    Samplesheet.
+ [-sindex -x]         Flag to indicate that only the first index should be used.
+
 =cut
